@@ -1,8 +1,13 @@
+use serde::{Deserialize, Serialize};
+use std::convert::TryInto;
 use std::fmt::Display;
 
-#[derive(Eq, PartialEq, Hash, Debug)]
+#[derive(Eq, PartialEq, Hash, Debug, Serialize, Deserialize, Copy, Clone)]
 pub enum Character {
-    AK,WB,ST,General
+    AK,
+    WB,
+    ST,
+    General,
 }
 impl Default for Character {
     fn default() -> Self {
@@ -16,7 +21,7 @@ impl TryInto<Character> for &str {
             "AK" => Ok(Character::AK),
             "WB" => Ok(Character::WB),
             "ST" => Ok(Character::ST),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
@@ -26,7 +31,7 @@ impl Display for Character {
             Self::AK => write!(f, "Arthur Kipps"),
             Self::WB => write!(f, "The Woman in Black"),
             Self::ST => write!(f, "Stella"),
-            Self::General => write!(f, "General")
+            Self::General => write!(f, "General"),
         }
     }
 }

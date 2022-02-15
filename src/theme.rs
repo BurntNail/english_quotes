@@ -1,8 +1,12 @@
+use serde::{Deserialize, Serialize};
+use std::convert::TryInto;
 use std::fmt::Display;
 
-#[derive(Eq, PartialEq, Hash, Debug)]
+#[derive(Eq, PartialEq, Hash, Debug, Serialize, Deserialize, Copy, Clone)]
 pub enum Theme {
-    WO,GH,General
+    WO,
+    GH,
+    General,
 }
 impl Default for Theme {
     fn default() -> Self {
@@ -15,7 +19,7 @@ impl TryInto<Theme> for &str {
         match self {
             "WO" => Ok(Theme::WO),
             "GH" => Ok(Theme::GH),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
