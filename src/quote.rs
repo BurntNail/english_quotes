@@ -1,18 +1,42 @@
 use serde::{Deserialize, Serialize};
-use std::convert::TryInto;
-use crate::quote_type::{QuoteType, QuoteType::*};
+use std::fmt::Display;
+
+#[derive(Eq, PartialEq, Hash, Debug, Serialize, Deserialize, Copy, Clone)]
+pub enum QuoteType {
+    //Characters
+    ArthurKipps,
+    WomanInBlack,
+    Stella,
+    //Themes
+    Women,
+    GothicHorror,
+    //Other
+    Other
+}
+
+use QuoteType::*;
+
+impl Default for QuoteType {
+    fn default() -> Self {
+        Other
+    }
+}
+impl Display for QuoteType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ArthurKipps => write!(f, "Character: Arthur Kipps"),
+            WomanInBlack => write!(f, "Character: The Woman in Black"),
+            Stella => write!(f, "Character: Stella"),
+            Women => write!(f, "Theme: Women"),
+            GothicHorror => write!(f, "Theme: Gothic Horror"),
+            Other => write!(f, "General"),
+        }
+    }
+}
+
+
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Quote(pub String, pub QuoteType);
 
-pub const ALL_PERMS: &[QuoteType] = &[Arthur_Kipps, Woman_In_Black, Stella, Women, Gothic_Horror, Other];
-
-impl From<&str> for Quote {
-    fn from(input: &str) -> Self {
-        let space_pos = input.chars().position(|c| c == ' ').unwrap();
-        let code: &QuoteType = &input[1..space_pos].try_into().unwrap_or_default();
-        let actual_contents = &input[space_pos + 1..];
-        
-        Quote(actual_contents.to_string(), *code)
-    }
-}
+pub const ALL_PERMS: &[QuoteType] = &[ArthurKipps, WomanInBlack, Stella, Women, GothicHorror, Other];

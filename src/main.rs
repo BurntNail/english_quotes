@@ -1,5 +1,7 @@
-mod quote_type;
 mod quote;
+mod db;
+mod util;
+mod rendering;
 
 use crate::quote::{Quote, ALL_PERMS};
 use crossterm::{
@@ -7,14 +9,11 @@ use crossterm::{
     event::{Event as CEvent, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode},
 };
-use rand::Rng;
-use std::fs::read_to_string;
 use std::{
     sync::mpsc,
     time::{Duration, Instant},
 };
-use thiserror::*;
-use tui::widgets::{List, ListItem, ListState, Row, Table};
+use tui::widgets::{ListState};
 use tui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -23,42 +22,12 @@ use tui::{
     widgets::{Block, BorderType, Borders, Paragraph, Tabs},
     Terminal,
 };
+use crate::util::{Event, MenuItem};
+use crate::db::{remove_quote_at_index, read_db, add_quote_to_db};
+// use crate::db::{add_random_quote, remove_quote_at_index, read_db};
+use crate::rendering::{render_home, render_quotes, render_entry};
 
-//https://blog.logrocket.com/rust-and-tui-building-a-command-line-interface-in-rust/
-
-const DB_PATH: &str = "./db.json";
-
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error("error reading the DB file: {0}")]
-    ReadDBError(#[from] std::io::Error),
-    #[error("error parsing the DB file: {0}")]
-    ParseDBError(#[from] serde_json::Error),
-}
-
-pub enum Event<I> {
-    Input(I),
-    Tick,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum MenuItem {
-    Home,
-    Quotes,
-    Entry,
-    Quit,
-}
-
-impl From<MenuItem> for usize {
-    fn from(input: MenuItem) -> Self {
-        match input {
-            MenuItem::Home => 0,
-            MenuItem::Quotes => 1,
-            MenuItem::Entry => 2,
-            MenuItem::Quit => 3,
-        }
-    }
-}
+//based off https://blog.logrocket.com/rust-and-tui-building-a-command-line-interface-in-rust/
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     if std::env::var_os("RUST_BACKTRACE").is_none() {
@@ -191,8 +160,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         if let Ok(event) = rx.recv() {
             match active_menu_item {
-                MenuItem::Entry => match event {
-                    Event::Input(event) => match event.code {
+                MenuItem::Entry => if let Event::Input(event) = event { match event.code {
                         KeyCode::Esc => active_menu_item = MenuItem::Home,
                         KeyCode::Enter => {
                             add_quote_to_db(Quote(current_input.trim().to_string(), ALL_PERMS[types_list_state.selected().expect("type selected")]))
@@ -229,25 +197,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             current_input.push(char);
                         }
                         _ => {}
-                    },
-                    _ => {}
+                    }
                 },
+                
+                
                 _ => match event {
                     Event::Input(event) => match event.code {
-                        KeyCode::Char('q') => {
+                        KeyCode::Char('g') => {
                             disable_raw_mode()?;
                             terminal.show_cursor()?;
                             break;
                         }
-                        KeyCode::Char('c') => active_menu_item = MenuItem::Quotes,
+                        KeyCode::Char('q') => active_menu_item = MenuItem::Quotes,
                         KeyCode::Char('h') => active_menu_item = MenuItem::Home,
                         KeyCode::Char('e') => {
                             current_input.clear();
-                            active_menu_item = MenuItem::Entry;
                         }
-                        KeyCode::Char('a') => {
-                            add_random_quote().expect("cannot add rnd quote");
-                        }
+                        // KeyCode::Char('a') => {
+                        //     add_random_quote().expect("cannot add rnd quote");
+                        // }
                         KeyCode::Char('d') => {
                             remove_quote_at_index(&mut quotes_list_state)
                                 .expect("can remove quote");
@@ -285,184 +253,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
-}
-
-fn render_home<'a>() -> Paragraph<'a> {
-    let home = Paragraph::new(vec![
-        Spans::from(vec![Span::raw("")]),
-        Spans::from(vec![Span::raw("Welcome")]),
-        Spans::from(vec![Span::raw("")]),
-        Spans::from(vec![Span::raw("to")]),
-        Spans::from(vec![Span::raw("")]),
-        Spans::from(vec![Span::styled(
-            "quotes-CLI",
-            Style::default().fg(Color::LightBlue),
-        )]),
-        Spans::from(vec![Span::raw("")]),
-        Spans::from(vec![Span::raw("Press 'c' to access Characters, 'a' to add a random Quote and 'e' to enter a new Quote.")]),
-    ])
-    .alignment(Alignment::Center)
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .style(Style::default().fg(Color::White))
-            .title("Home")
-            .border_type(BorderType::Plain),
-    );
-    home
-}
-
-fn read_db() -> Result<Vec<Quote>, Error> {
-    let db_content = read_to_string(DB_PATH)?;
-    let parsed: Vec<Quote> = serde_json::from_str(&db_content)?;
-    Ok(parsed)
-}
-
-fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>) {
-    let quotes = Block::default()
-        .borders(Borders::ALL)
-        .style(Style::default().fg(Color::White))
-        .title("Quotes")
-        .border_type(BorderType::Plain);
-
-    let quotes_list = read_db().expect("can fetch pet list");
-    let items: Vec<_> = quotes_list
-        .iter()
-        .map(|quote| {
-            ListItem::new(Spans::from(vec![Span::styled(
-                format!("{}", quote.1),
-                Style::default(),
-            )]))
-        })
-        .collect();
-
-    let quote_detail = if quotes_list.len() > 0 {
-        let selected_quote = quotes_list
-            .get(
-                quotes_list_state
-                    .selected()
-                    .expect("there is always a selected quote"),
-            )
-            .expect("exists");
-
-        Table::new(vec![Row::new(vec![
-            Span::raw(format!("{}", selected_quote.1)),
-            Span::raw(selected_quote.0.clone()),
-        ])])
-        .header(Row::new(vec![
-            Span::styled("Type", Style::default().add_modifier(Modifier::BOLD)),
-            Span::styled("Contents", Style::default().add_modifier(Modifier::BOLD)),
-        ]))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .style(Style::default().fg(Color::White))
-                .title("Quote Details")
-                .border_type(BorderType::Plain),
-        )
-        .widths(&[Constraint::Percentage(33), Constraint::Percentage(66)])
-    } else {
-        Table::new(vec![]).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .style(Style::default().fg(Color::White))
-                .title("No Quotes to List")
-                .border_type(BorderType::Plain),
-        )
-    };
-
-    let list = List::new(items).block(quotes).highlight_style(
-        Style::default()
-            .bg(Color::Yellow)
-            .fg(Color::Black)
-            .add_modifier(Modifier::BOLD),
-    );
-
-    (list, quote_detail)
-}
-
-fn render_entry(
-    current_input: &str,
-) -> (List, Paragraph) {
-    let types: Vec<_> = ALL_PERMS
-        .iter()
-        .map(|quote| {
-            ListItem::new(Spans::from(vec![Span::styled(
-                format!("{}", quote),
-                Style::default(),
-            )]))
-        })
-        .collect();
-
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .style(Style::default().fg(Color::White))
-        .title("Quote Type")
-        .border_type(BorderType::Plain);
-
-    let list = List::new(types).block(block).highlight_style(
-        Style::default()
-            .bg(Color::Yellow)
-            .fg(Color::Black)
-            .add_modifier(Modifier::BOLD),
-    );
-
-    let para = Paragraph::new(vec![
-        Spans::from(vec![Span::raw("")]),
-        Spans::from(vec![Span::raw(
-            "Enter in your Quote, press Enter to Confirm",
-        )]),
-        Spans::from(vec![Span::raw("")]),
-        Spans::from(vec![Span::raw(current_input)]),
-        Spans::from(vec![Span::raw("")]),
-    ])
-    .alignment(Alignment::Center)
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .style(Style::default().fg(Color::White))
-            .title("Quote Entry")
-            .border_type(BorderType::Plain),
-    );
-
-    (list, para)
-}
-
-fn add_quote_to_db(q: Quote) -> Result<Vec<Quote>, Error> {
-    let db_content = read_to_string(DB_PATH)?;
-    let mut parsed: Vec<Quote> = serde_json::from_str(&db_content)?;
-
-    parsed.push(q);
-    std::fs::write(DB_PATH, &serde_json::to_vec(&parsed)?)?;
-    Ok(parsed)
-}
-
-fn remove_quote_at_index(quote_list_state: &mut ListState) -> Result<(), Error> {
-    if let Some(selected) = quote_list_state.selected() {
-        let db_contents = read_to_string(DB_PATH)?;
-        let mut parsed: Vec<Quote> = serde_json::from_str(&db_contents)?;
-        parsed.remove(selected);
-        std::fs::write(DB_PATH, &serde_json::to_vec(&parsed)?)?;
-
-        if selected != 0 {
-            quote_list_state.select(Some(selected - 1));
-        }
-    }
-
-    Ok(())
-}
-
-fn add_random_quote() -> Result<Vec<Quote>, Error> {
-    let mut rng = rand::thread_rng();
-    let db_content = read_to_string(DB_PATH)?;
-    let mut parsed: Vec<Quote> = serde_json::from_str(&db_content)?;
-
-    let contents: i128 = rng.gen();
-    let tt = ALL_PERMS[rng.gen_range(0..ALL_PERMS.len())];
-    let rnd_quote = Quote(contents.to_string(), tt);
-
-    parsed.push(rnd_quote);
-    std::fs::write(DB_PATH, &serde_json::to_vec(&parsed)?)?;
-
-    Ok(parsed)
 }
