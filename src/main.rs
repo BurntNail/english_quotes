@@ -1,9 +1,7 @@
-mod chars;
+mod quote_type;
 mod quote;
-mod theme;
 
 use crate::quote::{Quote, ALL_PERMS};
-use chars::Character;
 use crossterm::{
     event,
     event::{Event as CEvent, KeyCode},
@@ -15,7 +13,6 @@ use std::{
     sync::mpsc,
     time::{Duration, Instant},
 };
-use theme::Theme;
 use thiserror::*;
 use tui::widgets::{List, ListItem, ListState, Row, Table};
 use tui::{
@@ -103,6 +100,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut quotes_list_state = ListState::default();
     quotes_list_state.select(Some(0));
 
+    let mut types_list_state = ListState::default();
+    types_list_state.select(Some(0));
+
     let mut current_input = String::new();
 
     loop {
@@ -121,7 +121,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .split(size);
 
-            let copyright = Paragraph::new("quotes-cli 2022 - All rights reserved")
+            let copyright = Paragraph::new("quotes-tui 2022 - All rights reserved")
                 .style(Style::default().fg(Color::LightCyan))
                 .alignment(Alignment::Center)
                 .block(
@@ -174,22 +174,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     rect.render_widget(right, quotes_chunk[1]);
                 }
                 MenuItem::Entry => {
-                    let para = Paragraph::new(vec![
-                        Spans::from(vec![Span::raw("")]),
-                        Spans::from(vec![Span::raw("Type C or T, a code, a space and then your quote")]),
-                        Spans::from(vec![Span::raw("")]),
-                        Spans::from(vec![Span::raw(current_input.as_str())]),
-                        Spans::from(vec![Span::raw("")]),
-                    ])
-                        .alignment(Alignment::Center)
-                        .block(
-                            Block::default()
-                                .borders(Borders::ALL)
-                                .style(Style::default().fg(Color::White))
-                                .title("Quote Entry")
-                                .border_type(BorderType::Plain),
-                        );
-                    rect.render_widget(para, chunks[1]);
+                    let entry_chunk = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .constraints(
+                            [Constraint::Percentage(33), Constraint::Percentage(67)].as_ref(),
+                        )
+                        .split(chunks[1]);
+
+                    let (types, entry) = render_entry(current_input.as_str());
+                    rect.render_stateful_widget(types, entry_chunk[0], &mut types_list_state);
+                    rect.render_widget(entry, entry_chunk[1]);
                 }
                 _ => {}
             }
@@ -201,14 +195,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Event::Input(event) => match event.code {
                         KeyCode::Esc => active_menu_item = MenuItem::Home,
                         KeyCode::Enter => {
-                            add_quote_to_db(Quote::from(current_input.trim()))
+                            add_quote_to_db(Quote(current_input.trim().to_string(), ALL_PERMS[types_list_state.selected().expect("type selected")]))
                                 .expect("cannot add quote");
-                        },
+                            current_input.clear();
+                            active_menu_item = MenuItem::Quotes;
+                        }
                         KeyCode::Backspace => {
-                            if current_input.len() > 0 {
+                            if !current_input.is_empty() {
                                 current_input.remove(current_input.len() - 1);
                             }
-                        },
+                        }
+                        KeyCode::Down => {
+                            if let Some(selected) = types_list_state.selected() {
+                                let amt_types = ALL_PERMS.len();
+                                if selected >= amt_types - 1 {
+                                    types_list_state.select(Some(0));
+                                } else {
+                                    types_list_state.select(Some(selected + 1))
+                                }
+                            }
+                        }
+                        KeyCode::Up => {
+                            if let Some(selected) = types_list_state.selected() {
+                                let amt_types = ALL_PERMS.len();
+                                if selected > 0 {
+                                    types_list_state.select(Some(selected - 1));
+                                } else {
+                                    types_list_state.select(Some(amt_types - 1))
+                                }
+                            }
+                        }
                         KeyCode::Char(char) => {
                             current_input.push(char);
                         }
@@ -319,7 +335,7 @@ fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>) {
             )]))
         })
         .collect();
-    
+
     let quote_detail = if quotes_list.len() > 0 {
         let selected_quote = quotes_list
             .get(
@@ -328,25 +344,31 @@ fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>) {
                     .expect("there is always a selected quote"),
             )
             .expect("exists");
-        
-         Table::new(vec![Row::new(vec![
+
+        Table::new(vec![Row::new(vec![
             Span::raw(format!("{}", selected_quote.1)),
             Span::raw(selected_quote.0.clone()),
         ])])
-            .header(Row::new(vec![
-                Span::styled("Type", Style::default().add_modifier(Modifier::BOLD)),
-                Span::styled("Contents", Style::default().add_modifier(Modifier::BOLD)),
-            ]))
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .style(Style::default().fg(Color::White))
-                    .title("Detail")
-                    .border_type(BorderType::Plain),
-            )
-            .widths(&[Constraint::Percentage(33), Constraint::Percentage(66)])
+        .header(Row::new(vec![
+            Span::styled("Type", Style::default().add_modifier(Modifier::BOLD)),
+            Span::styled("Contents", Style::default().add_modifier(Modifier::BOLD)),
+        ]))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .style(Style::default().fg(Color::White))
+                .title("Quote Details")
+                .border_type(BorderType::Plain),
+        )
+        .widths(&[Constraint::Percentage(33), Constraint::Percentage(66)])
     } else {
-        Table::new(vec![])
+        Table::new(vec![]).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .style(Style::default().fg(Color::White))
+                .title("No Quotes to List")
+                .border_type(BorderType::Plain),
+        )
     };
 
     let list = List::new(items).block(quotes).highlight_style(
@@ -356,9 +378,54 @@ fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>) {
             .add_modifier(Modifier::BOLD),
     );
 
-    
-
     (list, quote_detail)
+}
+
+fn render_entry(
+    current_input: &str,
+) -> (List, Paragraph) {
+    let types: Vec<_> = ALL_PERMS
+        .iter()
+        .map(|quote| {
+            ListItem::new(Spans::from(vec![Span::styled(
+                format!("{}", quote),
+                Style::default(),
+            )]))
+        })
+        .collect();
+
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default().fg(Color::White))
+        .title("Quote Type")
+        .border_type(BorderType::Plain);
+
+    let list = List::new(types).block(block).highlight_style(
+        Style::default()
+            .bg(Color::Yellow)
+            .fg(Color::Black)
+            .add_modifier(Modifier::BOLD),
+    );
+
+    let para = Paragraph::new(vec![
+        Spans::from(vec![Span::raw("")]),
+        Spans::from(vec![Span::raw(
+            "Enter in your Quote, press Enter to Confirm",
+        )]),
+        Spans::from(vec![Span::raw("")]),
+        Spans::from(vec![Span::raw(current_input)]),
+        Spans::from(vec![Span::raw("")]),
+    ])
+    .alignment(Alignment::Center)
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .style(Style::default().fg(Color::White))
+            .title("Quote Entry")
+            .border_type(BorderType::Plain),
+    );
+
+    (list, para)
 }
 
 fn add_quote_to_db(q: Quote) -> Result<Vec<Quote>, Error> {
@@ -376,7 +443,7 @@ fn remove_quote_at_index(quote_list_state: &mut ListState) -> Result<(), Error> 
         let mut parsed: Vec<Quote> = serde_json::from_str(&db_contents)?;
         parsed.remove(selected);
         std::fs::write(DB_PATH, &serde_json::to_vec(&parsed)?)?;
-        
+
         if selected != 0 {
             quote_list_state.select(Some(selected - 1));
         }
