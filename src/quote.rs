@@ -45,4 +45,4 @@ impl Display for QuoteType {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Quote(pub String, pub QuoteType);
 
-pub const ALL_PERMS: &[QuoteType] = &[ArthurKipps, WomanInBlack, Stella, Women, GothicHorror, Other];
+pub const ALL_PERMS: &[QuoteType] = &[ArthurKipps, WomanInBlack, Stella, Esme, SamuelDaily, Drablow, Women, GothicHorror, Other];
