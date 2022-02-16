@@ -5,6 +5,18 @@ use tui::layout::{Alignment, Constraint};
 use crate::quote::ALL_PERMS;
 use crate::db::read_db;
 
+fn get_type_items<'a> () -> Vec<ListItem<'a>> {
+	ALL_PERMS
+		.iter()
+		.map(|quote| {
+			ListItem::new(Spans::from(vec![Span::styled(
+				format!("{}", quote),
+				Style::default(),
+			)]))
+		})
+		.collect()
+}
+
 pub fn render_home<'a>() -> Paragraph<'a> {
 	let home = Paragraph::new(vec![
 		Spans::from(vec![Span::raw("")]),
@@ -37,30 +49,20 @@ pub fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>)
 		.title("Quotes")
 		.border_type(BorderType::Plain);
 	
-	let quotes_list = read_db().expect("can fetch pet list");
-	let items: Vec<_> = quotes_list
-		.iter()
-		.map(|quote| {
-			ListItem::new(Spans::from(vec![Span::styled(
-				format!("{}", quote.1),
-				Style::default(),
-			)]))
-		})
-		.collect();
+	let quotes_list = read_db().expect("can fetch quotes list");
+	
 	
 	let quote_detail = if !quotes_list.is_empty() {
-		let selected_quote = quotes_list
-			.get(
-				quotes_list_state
-					.selected()
-					.expect("there is always a selected quote"),
-			)
-			.expect("exists");
+		let selected_type = ALL_PERMS[quotes_list_state
+			.selected()
+			.expect("there is always a selected type in the types list")];
+		let rows: Vec<_> = quotes_list.into_iter().filter(|quote| quote.1 == selected_type).map(|quote| {
+			Row::new(vec![
+				Span::raw(format!("{}", quote.1)),
+				Span::raw(quote.0)])
+		}).collect();
 		
-		Table::new(vec![Row::new(vec![
-			Span::raw(format!("{}", selected_quote.1)),
-			Span::raw(selected_quote.0.clone()),
-		])])
+		Table::new(rows)
 			.header(Row::new(vec![
 				Span::styled("Type", Style::default().add_modifier(Modifier::BOLD)),
 				Span::styled("Contents", Style::default().add_modifier(Modifier::BOLD)),
@@ -83,7 +85,7 @@ pub fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>)
 		)
 	};
 	
-	let list = List::new(items).block(quotes).highlight_style(
+	let list = List::new(get_type_items()).block(quotes).highlight_style(
 		Style::default()
 			.bg(Color::Yellow)
 			.fg(Color::Black)
@@ -96,23 +98,13 @@ pub fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>)
 pub fn render_entry(
 	current_input: &str,
 ) -> (List, Paragraph) {
-	let types: Vec<_> = ALL_PERMS
-		.iter()
-		.map(|quote| {
-			ListItem::new(Spans::from(vec![Span::styled(
-				format!("{}", quote),
-				Style::default(),
-			)]))
-		})
-		.collect();
-	
 	let block = Block::default()
 		.borders(Borders::ALL)
 		.style(Style::default().fg(Color::White))
 		.title("Quote Type")
 		.border_type(BorderType::Plain);
 	
-	let list = List::new(types).block(block).highlight_style(
+	let list = List::new(get_type_items()).block(block).highlight_style(
 		Style::default()
 			.bg(Color::Yellow)
 			.fg(Color::Black)
