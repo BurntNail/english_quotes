@@ -103,6 +103,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut quotes_list_state = ListState::default();
     quotes_list_state.select(Some(0));
 
+    let mut current_input = String::new();
+
     loop {
         terminal.draw(|rect| {
             let size = rect.size();
@@ -171,84 +173,100 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     rect.render_stateful_widget(left, quotes_chunk[0], &mut quotes_list_state);
                     rect.render_widget(right, quotes_chunk[1]);
                 }
+                MenuItem::Entry => {
+                    let para = Paragraph::new(vec![
+                        Spans::from(vec![Span::raw("")]),
+                        Spans::from(vec![Span::raw("Type C or T, a code, a space and then your quote")]),
+                        Spans::from(vec![Span::raw("")]),
+                        Spans::from(vec![Span::raw(current_input.as_str())]),
+                        Spans::from(vec![Span::raw("")]),
+                    ])
+                        .alignment(Alignment::Center)
+                        .block(
+                            Block::default()
+                                .borders(Borders::ALL)
+                                .style(Style::default().fg(Color::White))
+                                .title("Quote Entry")
+                                .border_type(BorderType::Plain),
+                        );
+                    rect.render_widget(para, chunks[1]);
+                }
                 _ => {}
             }
         })?;
 
-        match rx.recv()? {
-            Event::Input(event) => match event.code {
-                KeyCode::Char('q') => {
-                    disable_raw_mode()?;
-                    terminal.show_cursor()?;
-                    break;
-                }
-                KeyCode::Char('c') => active_menu_item = MenuItem::Quotes,
-                KeyCode::Char('h') => active_menu_item = MenuItem::Home,
-                KeyCode::Char('a') => {
-                    add_random_quote().expect("cannot add rnd quote");
-                }
-                KeyCode::Char('d') => {
-                    remove_quote_at_index(&mut quotes_list_state).expect("can remove quote");
-                }
-                KeyCode::Down => {
-                    if let Some(selected) = quotes_list_state.selected() {
-                        let amt_quotes = read_db().expect("can fetch quotes list").len();
-                        if selected >= amt_quotes - 1 {
-                            quotes_list_state.select(Some(0));
-                        } else {
-                            quotes_list_state.select(Some(selected + 1))
+        if let Ok(event) = rx.recv() {
+            match active_menu_item {
+                MenuItem::Entry => match event {
+                    Event::Input(event) => match event.code {
+                        KeyCode::Esc => active_menu_item = MenuItem::Home,
+                        KeyCode::Enter => {
+                            add_quote_to_db(Quote::from(current_input.trim()))
+                                .expect("cannot add quote");
+                        },
+                        KeyCode::Backspace => {
+                            if current_input.len() > 0 {
+                                current_input.remove(current_input.len() - 1);
+                            }
+                        },
+                        KeyCode::Char(char) => {
+                            current_input.push(char);
                         }
-                    }
-                }
-                KeyCode::Up => {
-                    if let Some(selected) = quotes_list_state.selected() {
-                        let amt_quotes = read_db().expect("can fetch quotes list").len();
-                        if selected > 0 {
-                            quotes_list_state.select(Some(selected - 1));
-                        } else {
-                            quotes_list_state.select(Some(amt_quotes - 1))
+                        _ => {}
+                    },
+                    _ => {}
+                },
+                _ => match event {
+                    Event::Input(event) => match event.code {
+                        KeyCode::Char('q') => {
+                            disable_raw_mode()?;
+                            terminal.show_cursor()?;
+                            break;
                         }
-                    }
-                }
-                _ => {}
-            },
-            Event::Tick => {}
+                        KeyCode::Char('c') => active_menu_item = MenuItem::Quotes,
+                        KeyCode::Char('h') => active_menu_item = MenuItem::Home,
+                        KeyCode::Char('e') => {
+                            current_input.clear();
+                            active_menu_item = MenuItem::Entry;
+                        }
+                        KeyCode::Char('a') => {
+                            add_random_quote().expect("cannot add rnd quote");
+                        }
+                        KeyCode::Char('d') => {
+                            remove_quote_at_index(&mut quotes_list_state)
+                                .expect("can remove quote");
+                        }
+                        KeyCode::Down => {
+                            if let Some(selected) = quotes_list_state.selected() {
+                                let amt_quotes = read_db().expect("can fetch quotes list").len();
+                                if amt_quotes != 0 {
+                                    if selected >= amt_quotes - 1 {
+                                        quotes_list_state.select(Some(0));
+                                    } else {
+                                        quotes_list_state.select(Some(selected + 1))
+                                    }
+                                }
+                            }
+                        }
+                        KeyCode::Up => {
+                            if let Some(selected) = quotes_list_state.selected() {
+                                let amt_quotes = read_db().expect("can fetch quotes list").len();
+                                if amt_quotes != 0 {
+                                    if selected > 0 {
+                                        quotes_list_state.select(Some(selected - 1));
+                                    } else {
+                                        quotes_list_state.select(Some(amt_quotes - 1))
+                                    }
+                                }
+                            }
+                        }
+                        _ => {}
+                    },
+                    Event::Tick => {}
+                },
+            }
         }
     }
-
-    // let mut input = String::new();
-
-    // let mut chars: HashMap<Character, Vec<String>> = Default::default();
-    // let mut themes: HashMap<Theme, Vec<String>> = Default::default();
-
-    // println!("Enter a type, code and quote: ");
-
-    // loop {
-    //     std::io::stdin().read_line(&mut input)?;
-
-    //     let input_read = input.trim();
-
-    //     if input_read == "exit" {
-    //         break;
-    //     }
-
-    //     let space_pos = input_read.chars().position(|c| c == ' ').unwrap();
-    //     let is_char = &input_read[..1] == "C";
-    //     let code = &input_read[1..space_pos];
-    //     let quote = &input_read[space_pos+1..];
-
-    //     let list = if is_char {
-    //         chars.entry(code.try_into().unwrap_or_default()).or_default()
-    //     } else {
-    //         themes.entry(code.try_into().unwrap_or_default()).or_default()
-    //     };
-    //     list.push(quote.to_string());
-
-    //     input.clear();
-    // }
-
-    // print_hashmap("chars.md", chars)?;
-    // print_hashmap("themes.md", themes)?;
 
     Ok(())
 }
@@ -296,19 +314,40 @@ fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>) {
         .iter()
         .map(|quote| {
             ListItem::new(Spans::from(vec![Span::styled(
-                quote.0.clone(),
+                format!("{}", quote.1),
                 Style::default(),
             )]))
         })
         .collect();
-
-    let selected_quote = quotes_list
-        .get(
-            quotes_list_state
-                .selected()
-                .expect("there is always a selected pet"),
-        )
-        .expect("exists");
+    
+    let quote_detail = if quotes_list.len() > 0 {
+        let selected_quote = quotes_list
+            .get(
+                quotes_list_state
+                    .selected()
+                    .expect("there is always a selected quote"),
+            )
+            .expect("exists");
+        
+         Table::new(vec![Row::new(vec![
+            Span::raw(format!("{}", selected_quote.1)),
+            Span::raw(selected_quote.0.clone()),
+        ])])
+            .header(Row::new(vec![
+                Span::styled("Type", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Contents", Style::default().add_modifier(Modifier::BOLD)),
+            ]))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .style(Style::default().fg(Color::White))
+                    .title("Detail")
+                    .border_type(BorderType::Plain),
+            )
+            .widths(&[Constraint::Percentage(33), Constraint::Percentage(66)])
+    } else {
+        Table::new(vec![])
+    };
 
     let list = List::new(items).block(quotes).highlight_style(
         Style::default()
@@ -317,33 +356,7 @@ fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>) {
             .add_modifier(Modifier::BOLD),
     );
 
-    // let quote_detail = Table::new(vec![Row::new(vec![
-    //     Cell::from(Span::raw(format!("{}", selected_quote.1))),
-    //     Cell::from(Span::raw(selected_quote.0.clone()))
-    // ])])
-    //     .header(Row::new(vec![
-    //         Cell::from(Span::styled("Type", Style::default().add_modifier(Modifier::BOLD))),
-    //         Cell::from(Span::styled("Contents", Style::default().add_modifier(Modifier::BOLD)))
-    //     ]))
-
-    let quotes_cnts = vec![
-        Span::raw(format!("{}", selected_quote.1)),
-        Span::raw(selected_quote.0.clone()),
-    ];
-
-    let quote_detail = Table::new(vec![Row::new(quotes_cnts)])
-        .header(Row::new(vec![
-            Span::styled("Type", Style::default().add_modifier(Modifier::BOLD)),
-            Span::styled("Contents", Style::default().add_modifier(Modifier::BOLD)),
-        ]))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .style(Style::default().fg(Color::White))
-                .title("Detail")
-                .border_type(BorderType::Plain),
-        )
-        .widths(&[Constraint::Percentage(33), Constraint::Percentage(66)]);
+    
 
     (list, quote_detail)
 }
@@ -363,7 +376,10 @@ fn remove_quote_at_index(quote_list_state: &mut ListState) -> Result<(), Error> 
         let mut parsed: Vec<Quote> = serde_json::from_str(&db_contents)?;
         parsed.remove(selected);
         std::fs::write(DB_PATH, &serde_json::to_vec(&parsed)?)?;
-        quote_list_state.select(Some(selected - 1));
+        
+        if selected != 0 {
+            quote_list_state.select(Some(selected - 1));
+        }
     }
 
     Ok(())
@@ -383,22 +399,3 @@ fn add_random_quote() -> Result<Vec<Quote>, Error> {
 
     Ok(parsed)
 }
-
-// fn print_hashmap(file_name: &str, map: HashMap<impl Display, Vec<String>>) -> IOResult<()> {
-//     let path = Path::new(file_name);
-
-//     let mut file = if File::open(path).is_ok() {
-//         OpenOptions::new().append(true).open(path)
-//     } else {
-//         File::create(path)
-//     }?;
-
-//     for (title, vec) in map {
-//         writeln!(file, "# {}", title)?;
-//         for st in vec {
-//             writeln!(file, " - *{}*", st)?;
-//         }
-//     }
-
-//     Ok(())
-// }
