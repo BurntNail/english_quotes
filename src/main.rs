@@ -166,7 +166,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             add_quote_to_db(Quote(current_input.trim().to_string(), ALL_PERMS[types_list_state.selected().expect("type selected")]))
                                 .expect("cannot add quote");
                             current_input.clear();
-                            active_menu_item = MenuItem::Quotes;
                         }
                         KeyCode::Backspace => {
                             if !current_input.is_empty() {
@@ -212,6 +211,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         KeyCode::Char('h') => active_menu_item = MenuItem::Home,
                         KeyCode::Char('e') => {
                             current_input.clear();
+                            active_menu_item = MenuItem::Entry;
                         }
                         // KeyCode::Char('a') => {
                         //     add_random_quote().expect("cannot add rnd quote");

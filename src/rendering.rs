@@ -17,7 +17,7 @@ pub fn render_home<'a>() -> Paragraph<'a> {
 			Style::default().fg(Color::LightBlue),
 		)]),
 		Spans::from(vec![Span::raw("")]),
-		Spans::from(vec![Span::raw("Press 'c' to access Characters, 'a' to add a random Quote and 'e' to enter a new Quote.")]),
+		Spans::from(vec![Span::raw("Press 'q' to access the Quotes, 'e' to enter a new Quote, 'h' to get back home, and 'g' to exit.")]),
 	])
 		.alignment(Alignment::Center)
 		.block(

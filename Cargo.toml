@@ -13,6 +13,5 @@ crossterm = { version = "0.19", features = [ "serde" ] }
 tui = { version = "0.14", default-features = false, features = ['crossterm', 'serde'] }
 thiserror = "1.0"
 rand = "0.8.5"
-either = { version = "1.6.1", features = ["serde"] }
 
 [features]
