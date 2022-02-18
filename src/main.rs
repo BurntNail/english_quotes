@@ -1,9 +1,13 @@
-mod quote;
 mod db;
-mod util;
+mod quote;
 mod rendering;
+mod util;
 
-use crate::quote::{Quote, ALL_PERMS};
+use crate::{
+    db::{add_quote_to_db, read_db, remove_quote_at_index},
+    quote::{Quote, ALL_PERMS},
+    util::{Event, MenuItem},
+};
 use crossterm::{
     event,
     event::{Event as CEvent, KeyCode},
@@ -13,19 +17,19 @@ use std::{
     sync::mpsc,
     time::{Duration, Instant},
 };
-use tui::widgets::{ListState};
 use tui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, BorderType, Borders, Paragraph, Tabs},
+    widgets::{Block, BorderType, Borders, ListState, Paragraph, Tabs},
     Terminal,
 };
-use crate::util::{Event, MenuItem};
-use crate::db::{remove_quote_at_index, read_db, add_quote_to_db};
-// use crate::db::{add_random_quote, remove_quote_at_index, read_db};
-use crate::rendering::{render_home, render_quotes, render_entry};
+use crate::rendering::{
+    render_category_quotes, render_entry, render_home, render_quotes,
+};
+use tui::widgets::ListItem;
+use crate::db::remove_quote_by_quote;
 
 //based off https://blog.logrocket.com/rust-and-tui-building-a-command-line-interface-in-rust/
 
@@ -33,12 +37,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if std::env::var_os("RUST_BACKTRACE").is_none() {
         std::env::set_var("RUST_BACKTRACE", "full");
     }
-    color_eyre::install().unwrap();
+    color_eyre::install()?;
 
     enable_raw_mode().unwrap();
 
     let (tx, rx) = mpsc::channel();
-    let tick_rate = Duration::from_millis(200);
+    let tick_rate = Duration::from_millis(20);
     std::thread::spawn(move || {
         let mut last_tick = Instant::now();
 
@@ -71,6 +75,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut types_list_state = ListState::default();
     types_list_state.select(Some(0));
+
+    let mut category_quotes_selection_state = ListState::default();
+    category_quotes_selection_state.select(Some(0));
 
     let mut current_input = String::new();
 
@@ -154,52 +161,141 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     rect.render_stateful_widget(types, entry_chunk[0], &mut types_list_state);
                     rect.render_widget(entry, entry_chunk[1]);
                 }
+                MenuItem::QuoteCategory => {
+                    let q = ALL_PERMS[quotes_list_state.selected().expect("quote type selected")];
+                    let db = read_db()
+                        .expect("can read db");
+                    let qs = db
+                        .into_iter()
+                        .filter(|quote| quote.1 == q)
+                        .map(|quote| ListItem::new(quote.0))
+                        .collect();
+                    
+                    let widget = render_category_quotes(qs);
+                    rect.render_stateful_widget(
+                        widget,
+                        chunks[1],
+                        &mut category_quotes_selection_state,
+                    );
+                }
                 _ => {}
             }
         })?;
 
         if let Ok(event) = rx.recv() {
             match active_menu_item {
-                MenuItem::Entry => if let Event::Input(event) = event { match event.code {
-                        KeyCode::Esc => active_menu_item = MenuItem::Home,
-                        KeyCode::Enter => {
-                            add_quote_to_db(Quote(current_input.trim().to_string(), ALL_PERMS[types_list_state.selected().expect("type selected")]))
+                MenuItem::Entry => {
+                    if let Event::Input(event) = event {
+                        match event.code {
+                            KeyCode::Esc => active_menu_item = MenuItem::Quotes,
+                            KeyCode::Enter => {
+                                add_quote_to_db(Quote(
+                                    current_input.trim().to_string(),
+                                    ALL_PERMS[types_list_state.selected().expect("type selected")],
+                                ))
                                 .expect("cannot add quote");
-                            current_input.clear();
-                        }
-                        KeyCode::Backspace => {
-                            if !current_input.is_empty() {
-                                current_input.remove(current_input.len() - 1);
+                                current_input.clear();
                             }
-                        }
-                        KeyCode::Down => {
-                            if let Some(selected) = types_list_state.selected() {
-                                let amt_types = ALL_PERMS.len();
-                                if selected >= amt_types - 1 {
-                                    types_list_state.select(Some(0));
-                                } else {
-                                    types_list_state.select(Some(selected + 1))
+                            KeyCode::Backspace => {
+                                if !current_input.is_empty() {
+                                    current_input.remove(current_input.len() - 1);
                                 }
                             }
-                        }
-                        KeyCode::Up => {
-                            if let Some(selected) = types_list_state.selected() {
-                                let amt_types = ALL_PERMS.len();
-                                if selected > 0 {
-                                    types_list_state.select(Some(selected - 1));
-                                } else {
-                                    types_list_state.select(Some(amt_types - 1))
+                            KeyCode::Down => {
+                                if let Some(selected) = types_list_state.selected() {
+                                    let amt_types = ALL_PERMS.len();
+                                    if selected >= amt_types - 1 {
+                                        types_list_state.select(Some(0));
+                                    } else {
+                                        types_list_state.select(Some(selected + 1))
+                                    }
                                 }
                             }
+                            KeyCode::Up => {
+                                if let Some(selected) = types_list_state.selected() {
+                                    let amt_types = ALL_PERMS.len();
+                                    if selected > 0 {
+                                        types_list_state.select(Some(selected - 1));
+                                    } else {
+                                        types_list_state.select(Some(amt_types - 1))
+                                    }
+                                }
+                            }
+                            KeyCode::Char(char) => {
+                                current_input.push(char);
+                            }
+                            _ => {}
                         }
-                        KeyCode::Char(char) => {
-                            current_input.push(char);
-                        }
-                        _ => {}
                     }
                 },
-                
-                
+                MenuItem::QuoteCategory => {
+                    if let Event::Input(event) = event {
+                        let amt_quotes = {
+                            let q = ALL_PERMS[quotes_list_state.selected().expect("quote type selected")];
+                            read_db()
+                                .expect("can read db")
+                                .iter()
+                                .filter(|quote| quote.1 == q)
+                                .count()
+                        };
+                        match event.code {
+                            KeyCode::Down => {
+                                if let Some(selected) = category_quotes_selection_state.selected() {
+                                    if selected >= amt_quotes - 1 {
+                                        category_quotes_selection_state.select(Some(0));
+                                    } else {
+                                        category_quotes_selection_state.select(Some(selected + 1))
+                                    }
+                                }
+                            }
+                            KeyCode::Up => {
+                                if let Some(selected) = category_quotes_selection_state.selected() {
+                                    if selected > 0 {
+                                        category_quotes_selection_state.select(Some(selected - 1));
+                                    } else {
+                                        category_quotes_selection_state.select(Some(amt_quotes - 1))
+                                    }
+                                }
+                            },
+                            KeyCode::Esc => {
+                                category_quotes_selection_state.select(Some(0));
+                                active_menu_item = MenuItem::Quotes;
+                            },
+                            KeyCode::Enter => {
+                                let quote_type_index = quotes_list_state.selected().expect("quote type selected");
+                                let db = read_db()
+                                    .expect("can read db");
+                                let qq = {
+                                    let q = ALL_PERMS[quote_type_index];
+                                    let quotes_all: Vec<_> = db.clone()
+                                        .into_iter()
+                                        .filter(|quote| quote.1 == q).collect();
+                                    quotes_all[category_quotes_selection_state.selected().unwrap_or_default()].clone()
+                                };
+                                
+                                remove_quote_by_quote(&mut category_quotes_selection_state, qq.clone()).expect("cannot remove quote");
+                                current_input = qq.0;
+                                active_menu_item = MenuItem::Entry;
+                                types_list_state.select(Some(quote_type_index));
+                            },
+                            KeyCode::Char('d') => {
+                                let quote_type_index = quotes_list_state.selected().expect("quote type selected");
+                                let db = read_db()
+                                    .expect("can read db");
+                                let qq = {
+                                    let q = ALL_PERMS[quote_type_index];
+                                    let quotes_all: Vec<_> = db.clone()
+                                        .into_iter()
+                                        .filter(|quote| quote.1 == q).collect();
+                                    quotes_all[category_quotes_selection_state.selected().unwrap_or_default()].clone()
+                                };
+    
+                                remove_quote_by_quote(&mut category_quotes_selection_state, qq.clone()).expect("cannot remove quote");
+                            }
+                            _ => {}
+                        }
+                    }
+                }
                 _ => match event {
                     Event::Input(event) => match event.code {
                         KeyCode::Char('g') => {
@@ -213,18 +309,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             current_input.clear();
                             active_menu_item = MenuItem::Entry;
                         }
-                        // KeyCode::Char('a') => {
-                        //     add_random_quote().expect("cannot add rnd quote");
-                        // }
                         KeyCode::Char('d') => {
-                            remove_quote_at_index(&mut quotes_list_state)
+    
+                            let quote_type_index = quotes_list_state.selected().expect("quote type selected");
+                            let db = read_db()
+                                .expect("can read db");
+                            let qq = {
+                                let q = ALL_PERMS[quote_type_index];
+                                let quotes_all: Vec<_> = db.clone()
+                                    .into_iter()
+                                    .filter(|quote| quote.1 == q).collect();
+                                quotes_all[category_quotes_selection_state.selected().unwrap_or_default()].clone()
+                            };
+                            
+                            remove_quote_by_quote(&mut quotes_list_state, qq)
                                 .expect("can remove quote");
+                        }
+                        KeyCode::Enter => {
+                            active_menu_item = MenuItem::QuoteCategory;
                         }
                         KeyCode::Down => {
                             if let Some(selected) = quotes_list_state.selected() {
-                                let amt_quotes = read_db().expect("can fetch quotes list").len();
-                                if amt_quotes != 0 {
-                                    if selected >= amt_quotes - 1 {
+                                let amt_types = ALL_PERMS.len();
+                                if amt_types != 0 {
+                                    if selected >= amt_types - 1 {
                                         quotes_list_state.select(Some(0));
                                     } else {
                                         quotes_list_state.select(Some(selected + 1))
@@ -234,12 +342,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                         KeyCode::Up => {
                             if let Some(selected) = quotes_list_state.selected() {
-                                let amt_quotes = read_db().expect("can fetch quotes list").len();
-                                if amt_quotes != 0 {
+                                let amt_types = ALL_PERMS.len();
+                                if amt_types != 0 {
                                     if selected > 0 {
                                         quotes_list_state.select(Some(selected - 1));
                                     } else {
-                                        quotes_list_state.select(Some(amt_quotes - 1))
+                                        quotes_list_state.select(Some(amt_types - 1))
                                     }
                                 }
                             }

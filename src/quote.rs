@@ -14,7 +14,7 @@ pub enum QuoteType {
     Women,
     GothicHorror,
     //Other
-    Other
+    Other,
 }
 
 use QuoteType::*;
@@ -40,9 +40,23 @@ impl Display for QuoteType {
     }
 }
 
-
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Quote(pub String, pub QuoteType);
 
-pub const ALL_PERMS: &[QuoteType] = &[ArthurKipps, WomanInBlack, Stella, Esme, SamuelDaily, Drablow, Women, GothicHorror, Other];
+pub const ALL_PERMS: &[QuoteType] = &[
+    ArthurKipps,
+    WomanInBlack,
+    Stella,
+    Esme,
+    SamuelDaily,
+    Drablow,
+    Women,
+    GothicHorror,
+    Other,
+];
+
+impl PartialEq<&Quote> for Quote {
+    fn eq(&self, other: &&Quote) -> bool {
+        self.1 == other.1 && self.0 == other.0
+    }
+}
