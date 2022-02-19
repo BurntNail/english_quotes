@@ -1,7 +1,4 @@
-use crate::{
-    db::read_db,
-    quote::{ALL_PERMS},
-};
+use crate::{db::read_db, quote::ALL_PERMS};
 use tui::{
     layout::{Alignment, Constraint},
     style::{Color, Modifier, Style},

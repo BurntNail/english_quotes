@@ -4,8 +4,9 @@ mod rendering;
 mod util;
 
 use crate::{
-    db::{add_quote_to_db, read_db, remove_quote_at_index},
+    db::{add_quote_to_db, read_db, remove_quote_by_quote},
     quote::{Quote, ALL_PERMS},
+    rendering::{render_category_quotes, render_entry, render_home, render_quotes},
     util::{Event, MenuItem},
 };
 use crossterm::{
@@ -22,14 +23,9 @@ use tui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, BorderType, Borders, ListState, Paragraph, Tabs},
+    widgets::{Block, BorderType, Borders, ListItem, ListState, Paragraph, Tabs},
     Terminal,
 };
-use crate::rendering::{
-    render_category_quotes, render_entry, render_home, render_quotes,
-};
-use tui::widgets::ListItem;
-use crate::db::remove_quote_by_quote;
 
 //based off https://blog.logrocket.com/rust-and-tui-building-a-command-line-interface-in-rust/
 
@@ -163,14 +159,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 MenuItem::QuoteCategory => {
                     let q = ALL_PERMS[quotes_list_state.selected().expect("quote type selected")];
-                    let db = read_db()
-                        .expect("can read db");
+                    let db = read_db().expect("can read db");
                     let qs = db
                         .into_iter()
                         .filter(|quote| quote.1 == q)
                         .map(|quote| ListItem::new(quote.0))
                         .collect();
-                    
+
                     let widget = render_category_quotes(qs);
                     rect.render_stateful_widget(
                         widget,
@@ -227,11 +222,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             _ => {}
                         }
                     }
-                },
+                }
                 MenuItem::QuoteCategory => {
                     if let Event::Input(event) = event {
                         let amt_quotes = {
-                            let q = ALL_PERMS[quotes_list_state.selected().expect("quote type selected")];
+                            let q = ALL_PERMS
+                                [quotes_list_state.selected().expect("quote type selected")];
                             read_db()
                                 .expect("can read db")
                                 .iter()
@@ -256,41 +252,59 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         category_quotes_selection_state.select(Some(amt_quotes - 1))
                                     }
                                 }
-                            },
+                            }
                             KeyCode::Esc => {
                                 category_quotes_selection_state.select(Some(0));
                                 active_menu_item = MenuItem::Quotes;
-                            },
+                            }
                             KeyCode::Enter => {
-                                let quote_type_index = quotes_list_state.selected().expect("quote type selected");
-                                let db = read_db()
-                                    .expect("can read db");
+                                let quote_type_index =
+                                    quotes_list_state.selected().expect("quote type selected");
+                                let db = read_db().expect("can read db");
                                 let qq = {
                                     let q = ALL_PERMS[quote_type_index];
-                                    let quotes_all: Vec<_> = db.clone()
+                                    let quotes_all: Vec<_> = db
+                                        .clone()
                                         .into_iter()
-                                        .filter(|quote| quote.1 == q).collect();
-                                    quotes_all[category_quotes_selection_state.selected().unwrap_or_default()].clone()
+                                        .filter(|quote| quote.1 == q)
+                                        .collect();
+                                    quotes_all[category_quotes_selection_state
+                                        .selected()
+                                        .unwrap_or_default()]
+                                    .clone()
                                 };
-                                
-                                remove_quote_by_quote(&mut category_quotes_selection_state, qq.clone()).expect("cannot remove quote");
+
+                                remove_quote_by_quote(
+                                    &mut category_quotes_selection_state,
+                                    qq.clone(),
+                                )
+                                .expect("cannot remove quote");
                                 current_input = qq.0;
                                 active_menu_item = MenuItem::Entry;
                                 types_list_state.select(Some(quote_type_index));
-                            },
+                            }
                             KeyCode::Char('d') => {
-                                let quote_type_index = quotes_list_state.selected().expect("quote type selected");
-                                let db = read_db()
-                                    .expect("can read db");
+                                let quote_type_index =
+                                    quotes_list_state.selected().expect("quote type selected");
+                                let db = read_db().expect("can read db");
                                 let qq = {
                                     let q = ALL_PERMS[quote_type_index];
-                                    let quotes_all: Vec<_> = db.clone()
+                                    let quotes_all: Vec<_> = db
+                                        .clone()
                                         .into_iter()
-                                        .filter(|quote| quote.1 == q).collect();
-                                    quotes_all[category_quotes_selection_state.selected().unwrap_or_default()].clone()
+                                        .filter(|quote| quote.1 == q)
+                                        .collect();
+                                    quotes_all[category_quotes_selection_state
+                                        .selected()
+                                        .unwrap_or_default()]
+                                    .clone()
                                 };
-    
-                                remove_quote_by_quote(&mut category_quotes_selection_state, qq.clone()).expect("cannot remove quote");
+
+                                remove_quote_by_quote(
+                                    &mut category_quotes_selection_state,
+                                    qq.clone(),
+                                )
+                                .expect("cannot remove quote");
                             }
                             _ => {}
                         }
@@ -310,18 +324,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             active_menu_item = MenuItem::Entry;
                         }
                         KeyCode::Char('d') => {
-    
-                            let quote_type_index = quotes_list_state.selected().expect("quote type selected");
-                            let db = read_db()
-                                .expect("can read db");
+                            let quote_type_index =
+                                quotes_list_state.selected().expect("quote type selected");
+                            let db = read_db().expect("can read db");
                             let qq = {
                                 let q = ALL_PERMS[quote_type_index];
-                                let quotes_all: Vec<_> = db.clone()
+                                let quotes_all: Vec<_> = db
+                                    .clone()
                                     .into_iter()
-                                    .filter(|quote| quote.1 == q).collect();
-                                quotes_all[category_quotes_selection_state.selected().unwrap_or_default()].clone()
+                                    .filter(|quote| quote.1 == q)
+                                    .collect();
+                                quotes_all[category_quotes_selection_state
+                                    .selected()
+                                    .unwrap_or_default()]
+                                .clone()
                             };
-                            
+
                             remove_quote_by_quote(&mut quotes_list_state, qq)
                                 .expect("can remove quote");
                         }
