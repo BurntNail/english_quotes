@@ -1,4 +1,7 @@
-use crate::{quote::Quote, util::Error};
+use crate::{
+    quote::{Quote, ALL_PERMS},
+    utils::Error,
+};
 use std::fs::read_to_string;
 use tui::widgets::ListState;
 

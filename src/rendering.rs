@@ -1,9 +1,16 @@
-use crate::{db::read_db, quote::ALL_PERMS};
+use crate::{
+    db::read_db,
+    quote::ALL_PERMS,
+    utils::{
+        either::Either,
+        render::{coloured_span, default_block, default_style, para_from_strings},
+    },
+};
 use tui::{
     layout::{Alignment, Constraint},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, BorderType, Borders, List, ListItem, ListState, Paragraph, Row, Table},
+    widgets::{List, ListItem, ListState, Paragraph, Row, Table},
 };
 
 fn get_type_items<'a>() -> Vec<ListItem<'a>> {
@@ -19,36 +26,25 @@ fn get_type_items<'a>() -> Vec<ListItem<'a>> {
 }
 
 pub fn render_home<'a>() -> Paragraph<'a> {
-    let home = Paragraph::new(vec![
-		Spans::from(vec![Span::raw("")]),
-		Spans::from(vec![Span::raw("Welcome")]),
-		Spans::from(vec![Span::raw("")]),
-		Spans::from(vec![Span::raw("to")]),
-		Spans::from(vec![Span::raw("")]),
-		Spans::from(vec![Span::styled(
-			"quotes-CLI",
-			Style::default().fg(Color::LightBlue),
-		)]),
-		Spans::from(vec![Span::raw("")]),
-		Spans::from(vec![Span::raw("Press 'q' to access the Quotes, 'e' to enter a new Quote, 'h' to get back home, and 'g' to exit.")]),
+    let home = para_from_strings(vec![
+		Either::l(""),
+		Either::l("Welcome"),
+		Either::l(""),
+		Either::l("to"),
+		Either::l(""),
+		Either::r(coloured_span("quotes-TUI", Color::LightBlue)),
+		Either::l(""),
+		Either::l("Press 'q' to access the Quotes, 'e' to enter a new Quote, 'h' to get back home, and 'g' to exit.")
 	])
 		.alignment(Alignment::Center)
 		.block(
-			Block::default()
-				.borders(Borders::ALL)
-				.style(Style::default().fg(Color::White))
-				.title("Home")
-				.border_type(BorderType::Plain),
+			default_block().title("Home")
 		);
     home
 }
 
 pub fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>) {
-    let quotes = Block::default()
-        .borders(Borders::ALL)
-        .style(Style::default().fg(Color::White))
-        .title("Quotes")
-        .border_type(BorderType::Plain);
+    let quotes = default_block().title("Quotes");
 
     let quotes_list = read_db().expect("can fetch quotes list");
 
@@ -67,47 +63,25 @@ pub fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>)
                 Span::styled("Type", Style::default().add_modifier(Modifier::BOLD)),
                 Span::styled("Contents", Style::default().add_modifier(Modifier::BOLD)),
             ]))
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .style(Style::default().fg(Color::White))
-                    .title("Quote Details")
-                    .border_type(BorderType::Plain),
-            )
+            .block(default_block().title("Quote Details"))
             .widths(&[Constraint::Percentage(33), Constraint::Percentage(66)])
     } else {
-        Table::new(vec![]).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .style(Style::default().fg(Color::White))
-                .title("No Quotes to List")
-                .border_type(BorderType::Plain),
-        )
+        Table::new(vec![]).block(default_block().title("No Quotes to List"))
     };
 
-    let list = List::new(get_type_items()).block(quotes).highlight_style(
-        Style::default()
-            .bg(Color::Yellow)
-            .fg(Color::Black)
-            .add_modifier(Modifier::BOLD),
-    );
+    let list = List::new(get_type_items())
+        .block(quotes)
+        .highlight_style(default_style());
 
     (list, quote_detail)
 }
 
 pub fn render_entry(current_input: &str) -> (List, Paragraph) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .style(Style::default().fg(Color::White))
-        .title("Quote Type")
-        .border_type(BorderType::Plain);
+    let block = default_block().title("Quote Type");
 
-    let list = List::new(get_type_items()).block(block).highlight_style(
-        Style::default()
-            .bg(Color::Yellow)
-            .fg(Color::Black)
-            .add_modifier(Modifier::BOLD),
-    );
+    let list = List::new(get_type_items())
+        .block(block)
+        .highlight_style(default_style());
 
     let para = Paragraph::new(vec![
         Spans::from(vec![Span::raw("")]),
@@ -119,30 +93,7 @@ pub fn render_entry(current_input: &str) -> (List, Paragraph) {
         Spans::from(vec![Span::raw("")]),
     ])
     .alignment(Alignment::Center)
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .style(Style::default().fg(Color::White))
-            .title("Quote Entry")
-            .border_type(BorderType::Plain),
-    );
+    .block(default_block().title("Quote Entry"));
 
     (list, para)
-}
-
-pub fn render_category_quotes(quotes: Vec<ListItem>) -> List {
-    List::new(quotes)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .style(Style::default().fg(Color::White))
-                .title("Quotes Category")
-                .border_type(BorderType::Plain),
-        )
-        .highlight_style(
-            Style::default()
-                .bg(Color::Yellow)
-                .fg(Color::Black)
-                .add_modifier(Modifier::BOLD),
-        )
 }

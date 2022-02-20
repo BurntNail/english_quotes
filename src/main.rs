@@ -1,13 +1,17 @@
 mod db;
 mod quote;
 mod rendering;
-mod util;
+mod utils;
 
 use crate::{
-    db::{add_quote_to_db, read_db, remove_quote_by_quote},
+    db::{add_quote_to_db, get_quote, read_db, remove_quote_by_quote},
     quote::{Quote, ALL_PERMS},
     rendering::{render_category_quotes, render_entry, render_home, render_quotes},
-    util::{default_state, down_arrow, get_quote, up_arrow, Event, MenuItem},
+    utils::{
+        events::{default_state, down_arrow, up_arrow, Event},
+        render::{default_block, default_style},
+        MenuItem,
+    },
 };
 use crossterm::{
     event,
@@ -23,7 +27,7 @@ use tui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, BorderType, Borders, ListItem, Paragraph, Tabs},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Tabs},
     Terminal,
 };
 
@@ -86,13 +90,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let copyright = Paragraph::new("quotes-tui 2022 - All rights reserved")
         .style(Style::default().fg(Color::LightCyan))
         .alignment(Alignment::Center)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .style(Style::default().fg(Color::White))
-                .title("Copyright")
-                .border_type(BorderType::Plain),
-        );
+        .block(default_block().title("Copyright"));
 
     let menu: Vec<Spans> = menu_titles
         .iter()
@@ -165,14 +163,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .map(|quote| ListItem::new(quote.0))
                         .collect();
 
-                    let widget = render_category_quotes(qs);
+                    let widget = List::new(qs)
+                        .block(default_block().title("Quote Category"))
+                        .highlight_style(default_style());
                     rect.render_stateful_widget(
                         widget,
                         chunks[1],
                         &mut quotes_main_viewer_category_state,
                     );
                 }
-                _ => {}
             }
         })?;
 
@@ -293,7 +292,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     },
                     Event::Tick => {}
                 },
-                MenuItem::Quit => {}
             }
         }
     }
