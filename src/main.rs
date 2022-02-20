@@ -7,7 +7,7 @@ use crate::{
     db::{add_quote_to_db, read_db, remove_quote_by_quote},
     quote::{Quote, ALL_PERMS},
     rendering::{render_category_quotes, render_entry, render_home, render_quotes},
-    util::{Event, MenuItem},
+    util::{default_state, down_arrow, get_quote, up_arrow, Event, MenuItem},
 };
 use crossterm::{
     event,
@@ -23,7 +23,7 @@ use tui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, BorderType, Borders, ListItem, ListState, Paragraph, Tabs},
+    widgets::{Block, BorderType, Borders, ListItem, Paragraph, Tabs},
     Terminal,
 };
 
@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     color_eyre::install()?;
 
-    enable_raw_mode().unwrap();
+    enable_raw_mode()?;
 
     let (tx, rx) = mpsc::channel();
     let tick_rate = Duration::from_millis(20);
@@ -58,107 +58,106 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let stdout = std::io::stdout();
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = Terminal::new(CrosstermBackend::new(std::io::stdout()))?;
     terminal.clear()?;
 
-    let menu_titles = vec!["View", "Quotes", "Entry", "Quit"];
+    let menu_titles = vec!["View", "Quotes", "Entry"];
     let mut active_menu_item = MenuItem::Home;
 
-    let mut quotes_list_state = ListState::default();
-    quotes_list_state.select(Some(0));
-
-    let mut types_list_state = ListState::default();
-    types_list_state.select(Some(0));
-
-    let mut category_quotes_selection_state = ListState::default();
-    category_quotes_selection_state.select(Some(0));
+    let mut quotes_viewer_main_state = default_state();
+    let mut quote_entry_type_state = default_state();
+    let mut quotes_main_viewer_category_state = default_state();
 
     let mut current_input = String::new();
+
+    //region ui stuff that isn't re-allocated
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(2)
+        .constraints(
+            [
+                Constraint::Length(3),
+                Constraint::Min(2),
+                Constraint::Length(3),
+            ]
+            .as_ref(),
+        );
+
+    let copyright = Paragraph::new("quotes-tui 2022 - All rights reserved")
+        .style(Style::default().fg(Color::LightCyan))
+        .alignment(Alignment::Center)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .style(Style::default().fg(Color::White))
+                .title("Copyright")
+                .border_type(BorderType::Plain),
+        );
+
+    let menu: Vec<Spans> = menu_titles
+        .iter()
+        .map(|t| {
+            let (first, rest) = t.split_at(1);
+            Spans::from(vec![
+                Span::styled(
+                    first,
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::UNDERLINED),
+                ),
+                Span::styled(rest, Style::default().fg(Color::White)),
+            ])
+        })
+        .collect();
+
+    let vertical_menu_chunk = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref());
+
+    //endregion
 
     loop {
         terminal.draw(|rect| {
             let size = rect.size();
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(2)
-                .constraints(
-                    [
-                        Constraint::Length(3),
-                        Constraint::Min(2),
-                        Constraint::Length(3),
-                    ]
-                    .as_ref(),
-                )
-                .split(size);
+            let chunks = chunks.split(size);
 
-            let copyright = Paragraph::new("quotes-tui 2022 - All rights reserved")
-                .style(Style::default().fg(Color::LightCyan))
-                .alignment(Alignment::Center)
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .style(Style::default().fg(Color::White))
-                        .title("Copyright")
-                        .border_type(BorderType::Plain),
-                );
+            rect.render_widget(copyright.clone(), chunks[2]);
 
-            rect.render_widget(copyright, chunks[2]);
-
-            let menu = menu_titles
-                .iter()
-                .map(|t| {
-                    let (first, rest) = t.split_at(1);
-                    Spans::from(vec![
-                        Span::styled(
-                            first,
-                            Style::default()
-                                .fg(Color::Yellow)
-                                .add_modifier(Modifier::UNDERLINED),
-                        ),
-                        Span::styled(rest, Style::default().fg(Color::White)),
-                    ])
-                })
-                .collect();
-
-            let tabs = Tabs::new(menu)
+            let tabs = Tabs::new(menu.clone())
                 .select(active_menu_item.into())
                 .block(Block::default().title("Menu").borders(Borders::ALL))
                 .style(Style::default().fg(Color::White))
                 .highlight_style(Style::default().fg(Color::Yellow))
                 .divider(Span::raw("|"));
 
+            let vertical_menu_chunk = vertical_menu_chunk.split(chunks[1]);
+
             rect.render_widget(tabs, chunks[0]);
 
             match active_menu_item {
                 MenuItem::Home => rect.render_widget(render_home(), chunks[1]),
                 MenuItem::Quotes => {
-                    let quotes_chunk = Layout::default()
-                        .direction(Direction::Horizontal)
-                        .constraints(
-                            [Constraint::Percentage(20), Constraint::Percentage(80)].as_ref(),
-                        )
-                        .split(chunks[1]);
-
-                    let (left, right) = render_quotes(&quotes_list_state);
-                    rect.render_stateful_widget(left, quotes_chunk[0], &mut quotes_list_state);
-                    rect.render_widget(right, quotes_chunk[1]);
+                    let (left, right) = render_quotes(&quotes_viewer_main_state);
+                    rect.render_stateful_widget(
+                        left,
+                        vertical_menu_chunk[0],
+                        &mut quotes_viewer_main_state,
+                    );
+                    rect.render_widget(right, vertical_menu_chunk[1]);
                 }
                 MenuItem::Entry => {
-                    let entry_chunk = Layout::default()
-                        .direction(Direction::Horizontal)
-                        .constraints(
-                            [Constraint::Percentage(33), Constraint::Percentage(67)].as_ref(),
-                        )
-                        .split(chunks[1]);
-
                     let (types, entry) = render_entry(current_input.as_str());
-                    rect.render_stateful_widget(types, entry_chunk[0], &mut types_list_state);
-                    rect.render_widget(entry, entry_chunk[1]);
+                    rect.render_stateful_widget(
+                        types,
+                        vertical_menu_chunk[0],
+                        &mut quote_entry_type_state,
+                    );
+                    rect.render_widget(entry, vertical_menu_chunk[1]);
                 }
                 MenuItem::QuoteCategory => {
-                    let q = ALL_PERMS[quotes_list_state.selected().expect("quote type selected")];
+                    let q = ALL_PERMS[quotes_viewer_main_state
+                        .selected()
+                        .expect("quote type selected")];
                     let db = read_db().expect("can read db");
                     let qs = db
                         .into_iter()
@@ -170,7 +169,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     rect.render_stateful_widget(
                         widget,
                         chunks[1],
-                        &mut category_quotes_selection_state,
+                        &mut quotes_main_viewer_category_state,
                     );
                 }
                 _ => {}
@@ -186,7 +185,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             KeyCode::Enter => {
                                 add_quote_to_db(Quote(
                                     current_input.trim().to_string(),
-                                    ALL_PERMS[types_list_state.selected().expect("type selected")],
+                                    ALL_PERMS
+                                        [quote_entry_type_state.selected().expect("type selected")],
                                 ))
                                 .expect("cannot add quote");
                                 current_input.clear();
@@ -197,25 +197,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 }
                             }
                             KeyCode::Down => {
-                                if let Some(selected) = types_list_state.selected() {
-                                    let amt_types = ALL_PERMS.len();
-                                    if selected >= amt_types - 1 {
-                                        types_list_state.select(Some(0));
-                                    } else {
-                                        types_list_state.select(Some(selected + 1))
-                                    }
-                                }
+                                down_arrow(&mut quote_entry_type_state, ALL_PERMS.len())
                             }
-                            KeyCode::Up => {
-                                if let Some(selected) = types_list_state.selected() {
-                                    let amt_types = ALL_PERMS.len();
-                                    if selected > 0 {
-                                        types_list_state.select(Some(selected - 1));
-                                    } else {
-                                        types_list_state.select(Some(amt_types - 1))
-                                    }
-                                }
-                            }
+                            KeyCode::Up => up_arrow(&mut quote_entry_type_state, ALL_PERMS.len()),
                             KeyCode::Char(char) => {
                                 current_input.push(char);
                             }
@@ -226,8 +210,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 MenuItem::QuoteCategory => {
                     if let Event::Input(event) = event {
                         let amt_quotes = {
-                            let q = ALL_PERMS
-                                [quotes_list_state.selected().expect("quote type selected")];
+                            let q = ALL_PERMS[quotes_viewer_main_state
+                                .selected()
+                                .expect("quote type selected")];
                             read_db()
                                 .expect("can read db")
                                 .iter()
@@ -236,73 +221,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         };
                         match event.code {
                             KeyCode::Down => {
-                                if let Some(selected) = category_quotes_selection_state.selected() {
-                                    if selected >= amt_quotes - 1 {
-                                        category_quotes_selection_state.select(Some(0));
-                                    } else {
-                                        category_quotes_selection_state.select(Some(selected + 1))
-                                    }
-                                }
+                                down_arrow(&mut quotes_main_viewer_category_state, amt_quotes)
                             }
                             KeyCode::Up => {
-                                if let Some(selected) = category_quotes_selection_state.selected() {
-                                    if selected > 0 {
-                                        category_quotes_selection_state.select(Some(selected - 1));
-                                    } else {
-                                        category_quotes_selection_state.select(Some(amt_quotes - 1))
-                                    }
-                                }
+                                up_arrow(&mut quotes_main_viewer_category_state, amt_quotes)
                             }
                             KeyCode::Esc => {
-                                category_quotes_selection_state.select(Some(0));
+                                quotes_main_viewer_category_state.select(Some(0));
                                 active_menu_item = MenuItem::Quotes;
                             }
                             KeyCode::Enter => {
-                                let quote_type_index =
-                                    quotes_list_state.selected().expect("quote type selected");
-                                let db = read_db().expect("can read db");
-                                let qq = {
-                                    let q = ALL_PERMS[quote_type_index];
-                                    let quotes_all: Vec<_> = db
-                                        .clone()
-                                        .into_iter()
-                                        .filter(|quote| quote.1 == q)
-                                        .collect();
-                                    quotes_all[category_quotes_selection_state
-                                        .selected()
-                                        .unwrap_or_default()]
-                                    .clone()
-                                };
+                                let (quote_selected, quote_type_index) =
+                                    get_quote(&mut quotes_main_viewer_category_state);
 
                                 remove_quote_by_quote(
-                                    &mut category_quotes_selection_state,
-                                    qq.clone(),
+                                    &mut quotes_main_viewer_category_state,
+                                    quote_selected.clone(),
                                 )
                                 .expect("cannot remove quote");
-                                current_input = qq.0;
+                                current_input = quote_selected.0;
                                 active_menu_item = MenuItem::Entry;
-                                types_list_state.select(Some(quote_type_index));
+                                quote_entry_type_state.select(Some(quote_type_index));
                             }
                             KeyCode::Char('d') => {
-                                let quote_type_index =
-                                    quotes_list_state.selected().expect("quote type selected");
-                                let db = read_db().expect("can read db");
-                                let qq = {
-                                    let q = ALL_PERMS[quote_type_index];
-                                    let quotes_all: Vec<_> = db
-                                        .clone()
-                                        .into_iter()
-                                        .filter(|quote| quote.1 == q)
-                                        .collect();
-                                    quotes_all[category_quotes_selection_state
-                                        .selected()
-                                        .unwrap_or_default()]
-                                    .clone()
-                                };
-
+                                let (quote, ..) = get_quote(&mut quotes_main_viewer_category_state);
                                 remove_quote_by_quote(
-                                    &mut category_quotes_selection_state,
-                                    qq.clone(),
+                                    &mut quotes_main_viewer_category_state,
+                                    quote,
                                 )
                                 .expect("cannot remove quote");
                             }
@@ -310,7 +255,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
                 }
-                _ => match event {
+                MenuItem::Quotes => {
+                    if let Event::Input(event) = event {
+                        match event.code {
+                            KeyCode::Char('g') => {
+                                disable_raw_mode()?;
+                                terminal.show_cursor()?;
+                                break;
+                            }
+                            KeyCode::Char('h') => active_menu_item = MenuItem::Home,
+                            KeyCode::Char('e') => {
+                                current_input.clear();
+                                active_menu_item = MenuItem::Entry;
+                            }
+                            KeyCode::Enter => {
+                                active_menu_item = MenuItem::QuoteCategory;
+                            }
+                            KeyCode::Down => {
+                                down_arrow(&mut quotes_main_viewer_category_state, ALL_PERMS.len())
+                            }
+                            KeyCode::Up => {
+                                up_arrow(&mut quotes_main_viewer_category_state, ALL_PERMS.len())
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                MenuItem::Home => match event {
                     Event::Input(event) => match event.code {
                         KeyCode::Char('g') => {
                             disable_raw_mode()?;
@@ -318,62 +289,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             break;
                         }
                         KeyCode::Char('q') => active_menu_item = MenuItem::Quotes,
-                        KeyCode::Char('h') => active_menu_item = MenuItem::Home,
-                        KeyCode::Char('e') => {
-                            current_input.clear();
-                            active_menu_item = MenuItem::Entry;
-                        }
-                        KeyCode::Char('d') => {
-                            let quote_type_index =
-                                quotes_list_state.selected().expect("quote type selected");
-                            let db = read_db().expect("can read db");
-                            let qq = {
-                                let q = ALL_PERMS[quote_type_index];
-                                let quotes_all: Vec<_> = db
-                                    .clone()
-                                    .into_iter()
-                                    .filter(|quote| quote.1 == q)
-                                    .collect();
-                                quotes_all[category_quotes_selection_state
-                                    .selected()
-                                    .unwrap_or_default()]
-                                .clone()
-                            };
-
-                            remove_quote_by_quote(&mut quotes_list_state, qq)
-                                .expect("can remove quote");
-                        }
-                        KeyCode::Enter => {
-                            active_menu_item = MenuItem::QuoteCategory;
-                        }
-                        KeyCode::Down => {
-                            if let Some(selected) = quotes_list_state.selected() {
-                                let amt_types = ALL_PERMS.len();
-                                if amt_types != 0 {
-                                    if selected >= amt_types - 1 {
-                                        quotes_list_state.select(Some(0));
-                                    } else {
-                                        quotes_list_state.select(Some(selected + 1))
-                                    }
-                                }
-                            }
-                        }
-                        KeyCode::Up => {
-                            if let Some(selected) = quotes_list_state.selected() {
-                                let amt_types = ALL_PERMS.len();
-                                if amt_types != 0 {
-                                    if selected > 0 {
-                                        quotes_list_state.select(Some(selected - 1));
-                                    } else {
-                                        quotes_list_state.select(Some(amt_types - 1))
-                                    }
-                                }
-                            }
-                        }
                         _ => {}
                     },
                     Event::Tick => {}
                 },
+                MenuItem::Quit => {}
             }
         }
     }
