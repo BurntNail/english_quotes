@@ -6,7 +6,7 @@ mod utils;
 use crate::{
     db::{add_quote_to_db, get_quote, read_db, remove_quote_by_quote},
     quote::{Quote, ALL_PERMS},
-    rendering::{render_category_quotes, render_entry, render_home, render_quotes},
+    rendering::{render_entry, render_home, render_quotes},
     utils::{
         events::{default_state, down_arrow, up_arrow, Event},
         render::{default_block, default_style},
@@ -68,9 +68,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let menu_titles = vec!["View", "Quotes", "Entry"];
     let mut active_menu_item = MenuItem::Home;
 
-    let mut quotes_viewer_main_state = default_state();
-    let mut quote_entry_type_state = default_state();
-    let mut quotes_main_viewer_category_state = default_state();
+    let mut main_category_state = default_state();
+    let mut entry_category_state = default_state();
+    let mut quote_single_category_state = default_state();
 
     let mut current_input = String::new();
 
@@ -135,11 +135,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             match active_menu_item {
                 MenuItem::Home => rect.render_widget(render_home(), chunks[1]),
                 MenuItem::Quotes => {
-                    let (left, right) = render_quotes(&quotes_viewer_main_state);
+                    let (left, right) = render_quotes(&main_category_state);
                     rect.render_stateful_widget(
                         left,
                         vertical_menu_chunk[0],
-                        &mut quotes_viewer_main_state,
+                        &mut main_category_state,
                     );
                     rect.render_widget(right, vertical_menu_chunk[1]);
                 }
@@ -148,16 +148,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     rect.render_stateful_widget(
                         types,
                         vertical_menu_chunk[0],
-                        &mut quote_entry_type_state,
+                        &mut entry_category_state,
                     );
                     rect.render_widget(entry, vertical_menu_chunk[1]);
                 }
                 MenuItem::QuoteCategory => {
-                    let q = ALL_PERMS[quotes_viewer_main_state
+                    let q = ALL_PERMS[main_category_state
                         .selected()
                         .expect("quote type selected")];
                     let db = read_db().expect("can read db");
-                    let qs = db
+                    let qs: Vec<_> = db
                         .into_iter()
                         .filter(|quote| quote.1 == q)
                         .map(|quote| ListItem::new(quote.0))
@@ -169,7 +169,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     rect.render_stateful_widget(
                         widget,
                         chunks[1],
-                        &mut quotes_main_viewer_category_state,
+                        &mut quote_single_category_state,
                     );
                 }
             }
@@ -185,7 +185,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 add_quote_to_db(Quote(
                                     current_input.trim().to_string(),
                                     ALL_PERMS
-                                        [quote_entry_type_state.selected().expect("type selected")],
+                                        [entry_category_state.selected().expect("type selected")],
                                 ))
                                 .expect("cannot add quote");
                                 current_input.clear();
@@ -196,9 +196,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 }
                             }
                             KeyCode::Down => {
-                                down_arrow(&mut quote_entry_type_state, ALL_PERMS.len())
+                                down_arrow(&mut entry_category_state, ALL_PERMS.len())
                             }
-                            KeyCode::Up => up_arrow(&mut quote_entry_type_state, ALL_PERMS.len()),
+                            KeyCode::Up => up_arrow(&mut entry_category_state, ALL_PERMS.len()),
                             KeyCode::Char(char) => {
                                 current_input.push(char);
                             }
@@ -209,7 +209,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 MenuItem::QuoteCategory => {
                     if let Event::Input(event) = event {
                         let amt_quotes = {
-                            let q = ALL_PERMS[quotes_viewer_main_state
+                            let q = ALL_PERMS[main_category_state
                                 .selected()
                                 .expect("quote type selected")];
                             read_db()
@@ -220,32 +220,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         };
                         match event.code {
                             KeyCode::Down => {
-                                down_arrow(&mut quotes_main_viewer_category_state, amt_quotes)
+                                down_arrow(&mut quote_single_category_state, amt_quotes)
                             }
                             KeyCode::Up => {
-                                up_arrow(&mut quotes_main_viewer_category_state, amt_quotes)
+                                up_arrow(&mut quote_single_category_state, amt_quotes)
                             }
                             KeyCode::Esc => {
-                                quotes_main_viewer_category_state.select(Some(0));
+                                quote_single_category_state.select(Some(0));
                                 active_menu_item = MenuItem::Quotes;
                             }
                             KeyCode::Enter => {
                                 let (quote_selected, quote_type_index) =
-                                    get_quote(&mut quotes_main_viewer_category_state);
+                                    get_quote(&mut main_category_state, &mut quote_single_category_state);
 
                                 remove_quote_by_quote(
-                                    &mut quotes_main_viewer_category_state,
+                                    &mut quote_single_category_state,
                                     quote_selected.clone(),
                                 )
                                 .expect("cannot remove quote");
                                 current_input = quote_selected.0;
                                 active_menu_item = MenuItem::Entry;
-                                quote_entry_type_state.select(Some(quote_type_index));
+                                entry_category_state.select(Some(quote_type_index));
                             }
                             KeyCode::Char('d') => {
-                                let (quote, ..) = get_quote(&mut quotes_main_viewer_category_state);
+                                let (quote, ..) = get_quote(&mut main_category_state, &mut quote_single_category_state);
                                 remove_quote_by_quote(
-                                    &mut quotes_main_viewer_category_state,
+                                    &mut quote_single_category_state,
                                     quote,
                                 )
                                 .expect("cannot remove quote");
@@ -271,10 +271,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 active_menu_item = MenuItem::QuoteCategory;
                             }
                             KeyCode::Down => {
-                                down_arrow(&mut quotes_main_viewer_category_state, ALL_PERMS.len())
+                                down_arrow(&mut main_category_state, ALL_PERMS.len())
                             }
                             KeyCode::Up => {
-                                up_arrow(&mut quotes_main_viewer_category_state, ALL_PERMS.len())
+                                up_arrow(&mut main_category_state, ALL_PERMS.len())
                             }
                             _ => {}
                         }
