@@ -39,19 +39,14 @@ pub fn read_db() -> Result<Vec<Quote>, Error> {
 }
 
 pub fn get_quote(category_state: &mut ListState, item_state: &mut ListState) -> (Quote, usize) {
-    let quote_type_index = category_state
-        .selected()
-        .expect("quote type selected");
+    let quote_type_index = category_state.selected().expect("quote type selected");
     let db = read_db().expect("can read db");
 
     let q = ALL_PERMS[quote_type_index];
-    
-    let mut filtered: Vec<_> = db
+
+    let quote = db
         .into_iter()
         .filter(|quote| quote.1 == q)
-        .collect();
-    
-    let quote = filtered.into_iter()
         .nth(item_state.selected().unwrap_or_default())
         .unwrap();
 

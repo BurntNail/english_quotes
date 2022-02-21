@@ -153,9 +153,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     rect.render_widget(entry, vertical_menu_chunk[1]);
                 }
                 MenuItem::QuoteCategory => {
-                    let q = ALL_PERMS[main_category_state
-                        .selected()
-                        .expect("quote type selected")];
+                    let q = ALL_PERMS[main_category_state.selected().expect("quote type selected")];
                     let db = read_db().expect("can read db");
                     let qs: Vec<_> = db
                         .into_iter()
@@ -195,9 +193,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     current_input.remove(current_input.len() - 1);
                                 }
                             }
-                            KeyCode::Down => {
-                                down_arrow(&mut entry_category_state, ALL_PERMS.len())
-                            }
+                            KeyCode::Down => down_arrow(&mut entry_category_state, ALL_PERMS.len()),
                             KeyCode::Up => up_arrow(&mut entry_category_state, ALL_PERMS.len()),
                             KeyCode::Char(char) => {
                                 current_input.push(char);
@@ -209,9 +205,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 MenuItem::QuoteCategory => {
                     if let Event::Input(event) = event {
                         let amt_quotes = {
-                            let q = ALL_PERMS[main_category_state
-                                .selected()
-                                .expect("quote type selected")];
+                            let q = ALL_PERMS
+                                [main_category_state.selected().expect("quote type selected")];
                             read_db()
                                 .expect("can read db")
                                 .iter()
@@ -222,16 +217,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             KeyCode::Down => {
                                 down_arrow(&mut quote_single_category_state, amt_quotes)
                             }
-                            KeyCode::Up => {
-                                up_arrow(&mut quote_single_category_state, amt_quotes)
-                            }
+                            KeyCode::Up => up_arrow(&mut quote_single_category_state, amt_quotes),
                             KeyCode::Esc => {
                                 quote_single_category_state.select(Some(0));
                                 active_menu_item = MenuItem::Quotes;
                             }
                             KeyCode::Enter => {
-                                let (quote_selected, quote_type_index) =
-                                    get_quote(&mut main_category_state, &mut quote_single_category_state);
+                                let (quote_selected, quote_type_index) = get_quote(
+                                    &mut main_category_state,
+                                    &mut quote_single_category_state,
+                                );
 
                                 remove_quote_by_quote(
                                     &mut quote_single_category_state,
@@ -243,12 +238,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 entry_category_state.select(Some(quote_type_index));
                             }
                             KeyCode::Char('d') => {
-                                let (quote, ..) = get_quote(&mut main_category_state, &mut quote_single_category_state);
-                                remove_quote_by_quote(
+                                let (quote, ..) = get_quote(
+                                    &mut main_category_state,
                                     &mut quote_single_category_state,
-                                    quote,
-                                )
-                                .expect("cannot remove quote");
+                                );
+                                remove_quote_by_quote(&mut quote_single_category_state, quote)
+                                    .expect("cannot remove quote");
                             }
                             _ => {}
                         }
@@ -270,12 +265,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             KeyCode::Enter => {
                                 active_menu_item = MenuItem::QuoteCategory;
                             }
-                            KeyCode::Down => {
-                                down_arrow(&mut main_category_state, ALL_PERMS.len())
-                            }
-                            KeyCode::Up => {
-                                up_arrow(&mut main_category_state, ALL_PERMS.len())
-                            }
+                            KeyCode::Down => down_arrow(&mut main_category_state, ALL_PERMS.len()),
+                            KeyCode::Up => up_arrow(&mut main_category_state, ALL_PERMS.len()),
                             _ => {}
                         }
                     }
