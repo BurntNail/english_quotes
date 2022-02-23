@@ -87,7 +87,7 @@ impl<'a> MultipleList<'a> {
         self.block = Some(block);
         self
     }
-    
+
     #[allow(dead_code)]
     pub fn style(mut self, style: Style) -> MultipleList<'a> {
         self.style = style;

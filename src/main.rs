@@ -11,6 +11,7 @@ use crate::{
     rendering::{render_entry, render_home, render_quotes},
     utils::{
         events::{default_state, down_arrow, up_arrow, Event},
+        exports::export,
         render::{default_block, default_style},
         MenuItem,
     },
@@ -311,6 +312,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             active_menu_item = MenuItem::Entry;
                         }
                         KeyCode::Char('q') => active_menu_item = MenuItem::Quotes,
+                        KeyCode::Char('r') => export(),
                         _ => {}
                     },
                     Event::Tick => {}
