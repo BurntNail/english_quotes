@@ -1,5 +1,6 @@
 use crate::{
     db::read_db,
+    multiple_state::{MultipleList, MultipleListItem},
     quote::ALL_PERMS,
     utils::{
         either::Either,
@@ -12,18 +13,6 @@ use tui::{
     text::{Span, Spans},
     widgets::{List, ListItem, ListState, Paragraph, Row, Table},
 };
-
-fn get_type_items<'a>() -> Vec<ListItem<'a>> {
-    ALL_PERMS
-        .iter()
-        .map(|quote| {
-            ListItem::new(Spans::from(vec![Span::styled(
-                format!("{}", quote),
-                Style::default(),
-            )]))
-        })
-        .collect()
-}
 
 pub fn render_home<'a>() -> Paragraph<'a> {
     let home = para_from_strings(vec![
@@ -69,19 +58,41 @@ pub fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>)
         Table::new(vec![]).block(default_block().title("No Quotes to List"))
     };
 
-    let list = List::new(get_type_items())
+    let items: Vec<ListItem> = ALL_PERMS
+        .iter()
+        .map(|quote| {
+            ListItem::new(Spans::from(vec![Span::styled(
+                format!("{}", quote),
+                Style::default(),
+            )]))
+        })
+        .collect();
+
+    let list = List::new(items)
         .block(quotes)
         .highlight_style(default_style());
 
     (list, quote_detail)
 }
 
-pub fn render_entry(current_input: &str) -> (List, Paragraph) {
+pub fn render_entry(current_input: &str) -> (MultipleList, Paragraph) {
     let block = default_block().title("Quote Type");
 
-    let list = List::new(get_type_items())
+    let items: Vec<MultipleListItem> = ALL_PERMS
+        .iter()
+        .map(|quote| {
+            MultipleListItem::new(Spans::from(vec![Span::styled(
+                format!("{}", quote),
+                Style::default(),
+            )]))
+        })
+        .collect();
+
+    let list = MultipleList::new(items)
         .block(block)
-        .highlight_style(default_style());
+        .highlight_style(default_style())
+        .non_select_style(default_style().bg(Color::Cyan))
+        .both_style(default_style().bg(Color::Green));
 
     let para = Paragraph::new(vec![
         Spans::from(vec![Span::raw("")]),

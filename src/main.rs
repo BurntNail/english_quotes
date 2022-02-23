@@ -1,10 +1,12 @@
 mod db;
+mod multiple_state;
 mod quote;
 mod rendering;
 mod utils;
 
 use crate::{
     db::{add_quote_to_db, get_quote, read_db, remove_quote_by_quote},
+    multiple_state::MultipleListState,
     quote::{Quote, ALL_PERMS},
     rendering::{render_entry, render_home, render_quotes},
     utils::{
@@ -69,7 +71,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut active_menu_item = MenuItem::Home;
 
     let mut main_category_state = default_state();
-    let mut entry_category_state = default_state();
+    let mut entry_category_state = MultipleListState::default();
+    entry_category_state.highlight(Some(0));
     let mut quote_single_category_state = default_state();
 
     let mut current_input = String::new();
@@ -180,10 +183,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         match event.code {
                             KeyCode::Esc => active_menu_item = MenuItem::Quotes,
                             KeyCode::Enter => {
+                                let index = *entry_category_state
+                                    .selected()
+                                    .expect("type selected")
+                                    .get(0)
+                                    .unwrap();
                                 add_quote_to_db(Quote(
                                     current_input.trim().to_string(),
-                                    ALL_PERMS
-                                        [entry_category_state.selected().expect("type selected")],
+                                    ALL_PERMS[index],
                                 ))
                                 .expect("cannot add quote");
                                 current_input.clear();
@@ -193,8 +200,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     current_input.remove(current_input.len() - 1);
                                 }
                             }
-                            KeyCode::Down => down_arrow(&mut entry_category_state, ALL_PERMS.len()),
-                            KeyCode::Up => up_arrow(&mut entry_category_state, ALL_PERMS.len()),
+                            KeyCode::Tab => {
+                                if let Some(highlighted) = entry_category_state.highlighted() {
+                                    entry_category_state.select(highlighted);
+                                    // entry_category_state.highlight(None);
+                                }
+                            }
+                            KeyCode::Down => {
+                                if let Some(selected) = entry_category_state.highlighted() {
+                                    if selected < ALL_PERMS.len() - 1 {
+                                        entry_category_state.highlight(Some(selected + 1));
+                                    }
+                                } else {
+                                    entry_category_state.highlight(Some(ALL_PERMS.len() - 1));
+                                }
+                            }
+                            KeyCode::Up => {
+                                if let Some(selected) = entry_category_state.highlighted() {
+                                    if selected > 0 {
+                                        entry_category_state.highlight(Some(selected - 1));
+                                    }
+                                } else {
+                                    entry_category_state.highlight(Some(0));
+                                }
+                            }
                             KeyCode::Char(char) => {
                                 current_input.push(char);
                             }
@@ -235,7 +264,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .expect("cannot remove quote");
                                 current_input = quote_selected.0;
                                 active_menu_item = MenuItem::Entry;
-                                entry_category_state.select(Some(quote_type_index));
+                                // entry_category_state.select(Some(quote_type_index));
                             }
                             KeyCode::Char('d') => {
                                 let (quote, ..) = get_quote(
@@ -277,6 +306,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             disable_raw_mode()?;
                             terminal.show_cursor()?;
                             break;
+                        }
+                        KeyCode::Char('e') => {
+                            current_input.clear();
+                            active_menu_item = MenuItem::Entry;
                         }
                         KeyCode::Char('q') => active_menu_item = MenuItem::Quotes,
                         _ => {}
