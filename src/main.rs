@@ -32,6 +32,7 @@ use tui::{
     widgets::{Block, Borders, List, ListItem, Paragraph, Tabs},
     Terminal,
 };
+use crate::quote::QuoteType;
 
 //based off https://blog.logrocket.com/rust-and-tui-building-a-command-line-interface-in-rust/
 
@@ -160,7 +161,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let db = read_db().expect("can read db");
                     let qs: Vec<_> = db
                         .into_iter()
-                        .filter(|quote| quote.1 == q)
+                        .filter(|quote| quote.1.contains(&q))
                         .map(|quote| ListItem::new(quote.0))
                         .collect();
 
@@ -183,14 +184,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         match event.code {
                             KeyCode::Esc => active_menu_item = MenuItem::Quotes,
                             KeyCode::Enter => {
-                                let index = *entry_category_state
+                                let indices: Vec<QuoteType> = entry_category_state
                                     .selected()
-                                    .expect("type selected")
-                                    .get(0)
-                                    .unwrap();
+                                    .expect("type(s) selected")
+                                    .into_iter()
+                                    .map(|index| ALL_PERMS[index])
+                                    .collect();
+                                
                                 add_quote_to_db(Quote(
                                     current_input.trim().to_string(),
-                                    ALL_PERMS[index],
+                                    indices,
                                 ))
                                 .expect("cannot add quote");
                                 current_input.clear();
@@ -239,7 +242,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             read_db()
                                 .expect("can read db")
                                 .iter()
-                                .filter(|quote| quote.1 == q)
+                                .filter(|quote| quote.1.contains(&q))
                                 .count()
                         };
                         match event.code {
@@ -252,11 +255,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 active_menu_item = MenuItem::Quotes;
                             }
                             KeyCode::Enter => {
-                                let (quote_selected, quote_type_index) = get_quote(
+                                let quote_selected = get_quote(
                                     &mut main_category_state,
                                     &mut quote_single_category_state,
                                 );
-
+    
+                                entry_category_state.select_multiple(&quote_selected.1);
                                 remove_quote_by_quote(
                                     &mut quote_single_category_state,
                                     quote_selected.clone(),
@@ -264,10 +268,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .expect("cannot remove quote");
                                 current_input = quote_selected.0;
                                 active_menu_item = MenuItem::Entry;
-                                // entry_category_state.select(Some(quote_type_index));
                             }
                             KeyCode::Char('d') => {
-                                let (quote, ..) = get_quote(
+                                let quote = get_quote(
                                     &mut main_category_state,
                                     &mut quote_single_category_state,
                                 );

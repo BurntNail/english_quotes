@@ -41,7 +41,7 @@ impl Display for QuoteType {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Quote(pub String, pub QuoteType);
+pub struct Quote(pub String, pub Vec<QuoteType>);
 
 pub const ALL_PERMS: &[QuoteType] = &[
     ArthurKipps,

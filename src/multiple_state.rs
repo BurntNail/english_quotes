@@ -6,6 +6,7 @@ use tui::{
 };
 use tui::text::Text;
 use unicode_width::UnicodeWidthStr;
+use crate::quote::{QuoteType, ALL_PERMS};
 
 #[derive(Clone, Default)]
 pub struct MultipleListState {
@@ -30,6 +31,12 @@ impl MultipleListState {
             self.selected.remove(p);
         } else {
             self.selected.push(index);
+        }
+    }
+    
+    pub fn select_multiple (&mut self, indices: &[QuoteType]) {
+        for i in indices {
+            self.select(ALL_PERMS.iter().position(|x| x == i).unwrap());
         }
     }
     
