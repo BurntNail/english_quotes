@@ -38,17 +38,13 @@ pub fn read_db() -> Result<Vec<Quote>, Error> {
     Ok(parsed)
 }
 
-pub fn get_quote(category_state: &mut ListState, item_state: &mut ListState) -> (Quote, usize) {
+pub fn get_quote(category_state: &mut ListState, item_state: &mut ListState) -> Quote {
     let quote_type_index = category_state.selected().expect("quote type selected");
     let db = read_db().expect("can read db");
 
     let q = ALL_PERMS[quote_type_index];
-
-    let quote = db
-        .into_iter()
-        .filter(|quote| quote.1 == q)
+    db.into_iter()
+        .filter(|quote| quote.1.contains(&q))
         .nth(item_state.selected().unwrap_or_default())
-        .unwrap();
-
-    (quote, quote_type_index)
+        .unwrap()
 }
