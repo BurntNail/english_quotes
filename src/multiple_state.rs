@@ -87,12 +87,14 @@ impl<'a> MultipleList<'a> {
         self.block = Some(block);
         self
     }
-
+    
+    #[allow(dead_code)]
     pub fn style(mut self, style: Style) -> MultipleList<'a> {
         self.style = style;
         self
     }
 
+    #[allow(dead_code)]
     pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> MultipleList<'a> {
         self.highlight_symbol = Some(highlight_symbol);
         self
@@ -113,6 +115,7 @@ impl<'a> MultipleList<'a> {
         self
     }
 
+    #[allow(dead_code)]
     pub fn start_corner(mut self, corner: Corner) -> MultipleList<'a> {
         self.start_corner = corner;
         self
@@ -253,6 +256,7 @@ impl<'a> MultipleListItem<'a> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn style(mut self, style: Style) -> MultipleListItem<'a> {
         self.style = style;
         self
