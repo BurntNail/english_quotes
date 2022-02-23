@@ -1,18 +1,18 @@
+use crate::quote::{QuoteType, ALL_PERMS};
 use tui::{
     buffer::Buffer,
     layout::{Corner, Rect},
     style::Style,
+    text::Text,
     widgets::{Block, StatefulWidget, Widget},
 };
-use tui::text::Text;
 use unicode_width::UnicodeWidthStr;
-use crate::quote::{QuoteType, ALL_PERMS};
 
 #[derive(Clone, Default)]
 pub struct MultipleListState {
     offset: usize,
     selected: Vec<usize>,
-    highlighted: Option<usize>
+    highlighted: Option<usize>,
 }
 
 impl MultipleListState {
@@ -26,25 +26,25 @@ impl MultipleListState {
 
     pub fn select(&mut self, index: usize) {
         let current_index = self.selected.iter().position(|x| x == &index);
-        
+
         if let Some(p) = current_index {
             self.selected.remove(p);
         } else {
             self.selected.push(index);
         }
     }
-    
-    pub fn select_multiple (&mut self, indices: &[QuoteType]) {
+
+    pub fn select_multiple(&mut self, indices: &[QuoteType]) {
         for i in indices {
             self.select(ALL_PERMS.iter().position(|x| x == i).unwrap());
         }
     }
-    
-    pub fn highlight (&mut self, index: Option<usize>) {
+
+    pub fn highlight(&mut self, index: Option<usize>) {
         self.highlighted = index;
     }
-    
-    pub fn highlighted (&self) -> Option<usize> {
+
+    pub fn highlighted(&self) -> Option<usize> {
         self.highlighted
     }
 }
@@ -97,12 +97,12 @@ impl<'a> MultipleList<'a> {
         self.highlight_symbol = Some(highlight_symbol);
         self
     }
-    
-    pub fn both_style (mut self, style: Style) -> MultipleList<'a> {
+
+    pub fn both_style(mut self, style: Style) -> MultipleList<'a> {
         self.both_style = style;
         self
     }
-    
+
     pub fn non_select_style(mut self, style: Style) -> MultipleList<'a> {
         self.non_select_style = style;
         self
@@ -152,26 +152,26 @@ impl<'a> StatefulWidget for MultipleList<'a> {
             height += item.height();
             end += 1;
         }
-	    
-	    for selected in state.selected.clone() {
-		    while selected >= end {
-			    height = height.saturating_add(self.items[end].height());
-			    end += 1;
-			    while height > list_height {
-				    height = height.saturating_sub(self.items[start].height());
-				    start += 1;
-			    }
-		    }
-		    while selected < start {
-			    start -= 1;
-			    height = height.saturating_add(self.items[start].height());
-			    while height > list_height {
-				    end -= 1;
-				    height = height.saturating_sub(self.items[end].height());
-			    }
-		    }
-		    state.offset = start;
-	    }
+
+        for selected in state.selected.clone() {
+            while selected >= end {
+                height = height.saturating_add(self.items[end].height());
+                end += 1;
+                while height > list_height {
+                    height = height.saturating_sub(self.items[start].height());
+                    start += 1;
+                }
+            }
+            while selected < start {
+                start -= 1;
+                height = height.saturating_add(self.items[start].height());
+                while height > list_height {
+                    end -= 1;
+                    height = height.saturating_sub(self.items[end].height());
+                }
+            }
+            state.offset = start;
+        }
 
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
         let blank_symbol = " ".repeat(highlight_symbol.width());
@@ -207,7 +207,7 @@ impl<'a> StatefulWidget for MultipleList<'a> {
 
             let is_selected = state.selected.contains(&i);
             let is_highlighted = state.highlighted.map(|x| x == i).unwrap_or(false);
-            
+
             let elem_x = if has_selection {
                 let symbol = if is_selected || is_highlighted {
                     highlight_symbol
@@ -224,7 +224,7 @@ impl<'a> StatefulWidget for MultipleList<'a> {
             for (j, line) in item.content.lines.iter().enumerate() {
                 buf.set_spans(elem_x, y + j as u16, line, max_element_width as u16);
             }
-            
+
             if is_highlighted && is_selected {
                 buf.set_style(area, self.both_style)
             } else if is_selected {
@@ -244,20 +244,20 @@ pub struct MultipleListItem<'a> {
 
 impl<'a> MultipleListItem<'a> {
     pub fn new<T>(content: T) -> MultipleListItem<'a>
-        where
-            T: Into<Text<'a>>,
+    where
+        T: Into<Text<'a>>,
     {
         MultipleListItem {
             content: content.into(),
             style: Style::default(),
         }
     }
-    
+
     pub fn style(mut self, style: Style) -> MultipleListItem<'a> {
         self.style = style;
         self
     }
-    
+
     pub fn height(&self) -> usize {
         self.content.height()
     }

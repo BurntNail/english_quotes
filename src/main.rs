@@ -7,7 +7,7 @@ mod utils;
 use crate::{
     db::{add_quote_to_db, get_quote, read_db, remove_quote_by_quote},
     multiple_state::MultipleListState,
-    quote::{Quote, ALL_PERMS},
+    quote::{Quote, QuoteType, ALL_PERMS},
     rendering::{render_entry, render_home, render_quotes},
     utils::{
         events::{default_state, down_arrow, up_arrow, Event},
@@ -32,7 +32,6 @@ use tui::{
     widgets::{Block, Borders, List, ListItem, Paragraph, Tabs},
     Terminal,
 };
-use crate::quote::QuoteType;
 
 //based off https://blog.logrocket.com/rust-and-tui-building-a-command-line-interface-in-rust/
 
@@ -190,12 +189,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .into_iter()
                                     .map(|index| ALL_PERMS[index])
                                     .collect();
-                                
-                                add_quote_to_db(Quote(
-                                    current_input.trim().to_string(),
-                                    indices,
-                                ))
-                                .expect("cannot add quote");
+
+                                add_quote_to_db(Quote(current_input.trim().to_string(), indices))
+                                    .expect("cannot add quote");
                                 current_input.clear();
                             }
                             KeyCode::Backspace => {
@@ -259,7 +255,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     &mut main_category_state,
                                     &mut quote_single_category_state,
                                 );
-    
+
                                 entry_category_state.select_multiple(&quote_selected.1);
                                 remove_quote_by_quote(
                                     &mut quote_single_category_state,

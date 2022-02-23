@@ -44,7 +44,12 @@ pub fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>)
         let rows: Vec<_> = quotes_list
             .into_iter()
             .filter(|quote| quote.1.contains(&selected_type))
-            .map(|quote| Row::new(vec![Span::raw(format!("{:?}", quote.1)), Span::raw(quote.0)]))
+            .map(|quote| {
+                Row::new(vec![
+                    Span::raw(format!("{:?}", quote.1)),
+                    Span::raw(quote.0),
+                ])
+            })
             .collect();
 
         Table::new(rows)
