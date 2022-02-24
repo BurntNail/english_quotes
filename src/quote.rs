@@ -17,6 +17,7 @@ pub enum QuoteType {
     //Themes
     Women,
     GothicHorror,
+    Secrecy,
     //Locations
     CrythinGifford,
     DailyManor,
@@ -47,6 +48,7 @@ impl Display for QuoteType {
             Drablow => write!(f, "Character: Mrs Drablow"),
             Women => write!(f, "Theme: Women"),
             GothicHorror => write!(f, "Theme: Gothic Horror"),
+            Secrecy => write!(f, "Theme: Mystery & Secrets"),
             CrythinGifford => write!(f, "Location: Crythin Gifford"),
             DailyManor => write!(f, "Location: The Daily Manor"),
             GiffordArms => write!(f, "Location: The Gifford Arms"),
@@ -71,6 +73,7 @@ pub const ALL_PERMS: &[QuoteType] = &[
     Drablow,
     Women,
     GothicHorror,
+    Secrecy,
     CrythinGifford,
     DailyManor,
     GiffordArms,
