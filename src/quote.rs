@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+use enum_derive::AllVariants;
 
-#[derive(Eq, PartialEq, Hash, Debug, Serialize, Deserialize, Copy, Clone)]
+#[derive(Eq, PartialEq, Hash, Debug, Serialize, Deserialize, Copy, Clone, AllVariants)]
 pub enum QuoteType {
     //Characters
     ArthurKipps,
@@ -18,10 +19,12 @@ pub enum QuoteType {
     Women,
     GothicHorror,
     Secrecy,
+    Innocence,
     //Locations
     CrythinGifford,
     DailyManor,
     GiffordArms,
+    EelMarshHouse,
     //Other
     Other,
 }
@@ -48,10 +51,12 @@ impl Display for QuoteType {
             Drablow => write!(f, "Character: Mrs Drablow"),
             Women => write!(f, "Theme: Women"),
             GothicHorror => write!(f, "Theme: Gothic Horror"),
+            Innocence => write!(f, "Theme: Innocence"),
             Secrecy => write!(f, "Theme: Mystery & Secrets"),
             CrythinGifford => write!(f, "Location: Crythin Gifford"),
             DailyManor => write!(f, "Location: The Daily Manor"),
             GiffordArms => write!(f, "Location: The Gifford Arms"),
+            EelMarshHouse => write!(f, "Location: Eel Marsh House"),
             Other => write!(f, "General"),
         }
     }
@@ -60,25 +65,7 @@ impl Display for QuoteType {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Quote(pub String, pub Vec<QuoteType>);
 
-pub const ALL_PERMS: &[QuoteType] = &[
-    ArthurKipps,
-    WomanInBlack,
-    Stella,
-    Esme,
-    Isabel,
-    Spider,
-    MrBently,
-    SamuelDaily,
-    MrsDaily,
-    Drablow,
-    Women,
-    GothicHorror,
-    Secrecy,
-    CrythinGifford,
-    DailyManor,
-    GiffordArms,
-    Other,
-];
+pub const ALL_PERMS: &[QuoteType] = &QuoteType::all_variants();
 
 impl PartialEq<&Quote> for Quote {
     fn eq(&self, other: &&Quote) -> bool {
