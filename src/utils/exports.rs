@@ -7,7 +7,7 @@ pub fn export() {
     writeln!(f, "# Jack's WIB Quotes\n").unwrap();
 
     for perm in ALL_PERMS {
-        write!(f, "## {}\n", perm).unwrap();
+        writeln!(f, "## {}", perm).unwrap();
         list.clone()
             .into_iter()
             .filter(|quote| quote.1.contains(perm))

@@ -17,6 +17,19 @@
  - *A good job I came when I did*, related to **[SamuelDaily]**
  - *a genuine sadness at parting company*, related to **[SamuelDaily]**
  - *once, or at most twice a year*, related to **[SamuelDaily, Esme, Stella]**
+ - *retained a schoolboy's passion for everything to do with railway stations*, related to **[Innocence]**
+ - *I did not believe in ghosts*, related to **[Innocence]**
+ - *having, in my youthful and priggish way, summed up and all but dismissed him*, related to **[Innocence, SamuelDaily]**
+ - *Putting his remarks down to some local tales and silliness*, related to **[Innocence, SamuelDaily]**
+ - *fascinated by everything I saw*, related to **[Innocence]**
+ - *For I see that then I was still all in a state of innocence, but that innocence, once lost, is lost forever*, related to **[Innocence]**
+ - *My spirits for many years now have been excessively affected by the ways of the weather*, related to **[Innocence]**
+ - *I can scarcely bring myself to write about*, related to **[Innocence]**
+ - *There was no merciful loss of conciousness, I was forced to live through it all, every minute and then everyday thereafter*, related to **[Innocence, Stella]**
+ - *They are telling ghost stories*, related to **[MonksPiece, Innocence]**
+ - *a story, a true story of haunting and evil*, related to **[Innocence]**
+ - *tell the horridest, most spine-chilling tale, with much dramatic effect and mock-terrified shrieking*, related to **[Innocence, MonksPiece]**
+ - *fits of choking laughter*, related to **[Innocence, MonksPiece]**
 
 ## Character: The Woman in Black
  - *although I did not stare*, related to **[Women, ArthurKipps]**
@@ -25,6 +38,7 @@
 
 ## Character: Stella
  - *once, or at most twice a year*, related to **[SamuelDaily, ArthurKipps, Esme]**
+ - *There was no merciful loss of conciousness, I was forced to live through it all, every minute and then everyday thereafter*, related to **[ArthurKipps, Innocence]**
 
 ## Character: Esme
  - *fussing about my catching a chill*, related to **[Women]**
@@ -61,6 +75,8 @@
  - *a genuine sadness at parting company*, related to **[ArthurKipps]**
  - *once, or at most twice a year*, related to **[ArthurKipps, Esme, Stella]**
  - *clothes were of good quality, but somewhat brashly cut*, related to **[]**
+ - *having, in my youthful and priggish way, summed up and all but dismissed him*, related to **[ArthurKipps, Innocence]**
+ - *Putting his remarks down to some local tales and silliness*, related to **[ArthurKipps, Innocence]**
 
 ## Character: Mrs Daily
  - *over coffee which Mrs Daily poured out*, related to **[ArthurKipps, SamuelDaily, Women]**
@@ -94,6 +110,23 @@
 
 ## Theme: Gothic Horror
 
+## Theme: Mystery & Secrets
+
+## Theme: Innocence
+ - *retained a schoolboy's passion for everything to do with railway stations*, related to **[ArthurKipps]**
+ - *I did not believe in ghosts*, related to **[ArthurKipps]**
+ - *having, in my youthful and priggish way, summed up and all but dismissed him*, related to **[ArthurKipps, SamuelDaily]**
+ - *Putting his remarks down to some local tales and silliness*, related to **[ArthurKipps, SamuelDaily]**
+ - *fascinated by everything I saw*, related to **[ArthurKipps]**
+ - *For I see that then I was still all in a state of innocence, but that innocence, once lost, is lost forever*, related to **[ArthurKipps]**
+ - *My spirits for many years now have been excessively affected by the ways of the weather*, related to **[ArthurKipps]**
+ - *I can scarcely bring myself to write about*, related to **[ArthurKipps]**
+ - *There was no merciful loss of conciousness, I was forced to live through it all, every minute and then everyday thereafter*, related to **[ArthurKipps, Stella]**
+ - *They are telling ghost stories*, related to **[ArthurKipps, MonksPiece]**
+ - *a story, a true story of haunting and evil*, related to **[ArthurKipps]**
+ - *tell the horridest, most spine-chilling tale, with much dramatic effect and mock-terrified shrieking*, related to **[ArthurKipps, MonksPiece]**
+ - *fits of choking laughter*, related to **[ArthurKipps, MonksPiece]**
+
 ## Location: Crythin Gifford
  - *Londoner's sense of superiority*, related to **[ArthurKipps]**
  - *russet and golden leaves*, related to **[]**
@@ -118,6 +151,13 @@
 
 ## Location: The Gifford Arms
  - *home-made broth of sirloin of beef, apple and raisan*, related to **[CrythinGifford]**
+
+## Location: Eel Marsh House
+
+## Location: Monk's Piece
+ - *They are telling ghost stories*, related to **[ArthurKipps, Innocence]**
+ - *tell the horridest, most spine-chilling tale, with much dramatic effect and mock-terrified shrieking*, related to **[ArthurKipps, Innocence]**
+ - *fits of choking laughter*, related to **[ArthurKipps, Innocence]**
 
 ## General
 

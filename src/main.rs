@@ -5,7 +5,7 @@ mod rendering;
 mod utils;
 
 use crate::{
-    db::{add_quote_to_db, get_quote, read_db, remove_quote_by_quote},
+    db::{add_quote_to_db, get_quote, read_db, remove_quote_by_quote, sort_list},
     multiple_state::MultipleListState,
     quote::{Quote, QuoteType, ALL_PERMS},
     rendering::{render_entry, render_home, render_quotes},
@@ -320,6 +320,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
+
+    sort_list().unwrap();
 
     Ok(())
 }
