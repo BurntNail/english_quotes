@@ -13,6 +13,6 @@ crossterm = { version = "0.19", features = [ "serde" ] }
 tui = { version = "0.14", default-features = false, features = ['crossterm', 'serde'] }
 thiserror = "1.0"
 unicode-width = "0.1.9"
-enum_derive = {path = "../enum_derive"}
+enum_derive_list = "0.1.0"
 
 [features]
