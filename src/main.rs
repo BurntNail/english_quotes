@@ -1,6 +1,6 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::all)]
-#![warn(clippy::nurserycls)]
+#![warn(clippy::nursery)]
 
 mod db;
 mod multiple_state;

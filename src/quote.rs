@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-use enum_derive::AllVariants;
+use enum_derive_list::AllVariants;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize, Copy, Clone, AllVariants)]
 pub enum QuoteType {
