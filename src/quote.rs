@@ -23,12 +23,14 @@ pub enum QuoteType {
     GothicHorror,
     Secrecy,
     Innocence,
+    Supernatural,
     //Locations
     CrythinGifford,
     DailyManor,
     GiffordArms,
     EelMarshHouse,
     MonksPiece,
+    NLCAndMarshes,
     //Other
     Other,
 }
@@ -59,11 +61,13 @@ impl Display for QuoteType {
             GothicHorror => write!(f, "Theme: Gothic Horror"),
             Innocence => write!(f, "Theme: Innocence"),
             Secrecy => write!(f, "Theme: Mystery & Secrets"),
+            Supernatural => write!(f, "Theme: Supernatural"),
             CrythinGifford => write!(f, "Location: Crythin Gifford"),
             DailyManor => write!(f, "Location: The Daily Manor"),
             GiffordArms => write!(f, "Location: The Gifford Arms"),
             EelMarshHouse => write!(f, "Location: Eel Marsh House"),
             MonksPiece => write!(f, "Location: Monk's Piece"),
+            NLCAndMarshes => write!(f, "Location: Nine Lives Causway + Marshes"),
             Other => write!(f, "General"),
         }
     }

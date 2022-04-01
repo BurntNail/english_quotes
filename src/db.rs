@@ -16,7 +16,7 @@ pub fn add_quote_to_db(q: Quote) -> Result<Vec<Quote>, Error> {
     Ok(parsed)
 }
 
-pub fn remove_quote_by_quote(list_state: &mut ListState, q: Quote) -> Result<(), Error> {
+pub fn remove_quote_by_quote(list_state: &mut ListState, q: &Quote) -> Result<(), Error> {
     if let Some(selected) = list_state.selected() {
         let db_contents = read_to_string(DB_PATH)?;
         let mut parsed: Vec<Quote> = serde_json::from_str(&db_contents)?;

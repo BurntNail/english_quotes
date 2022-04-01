@@ -1,3 +1,7 @@
+#![warn(clippy::pedantic)]
+#![warn(clippy::all)]
+#![warn(clippy::nurserycls)]
+
 mod db;
 mod multiple_state;
 mod quote;
@@ -260,7 +264,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 entry_category_state.select_multiple(&quote_selected.1);
                                 remove_quote_by_quote(
                                     &mut quote_single_category_state,
-                                    quote_selected.clone(),
+                                    &quote_selected,
                                 )
                                 .expect("cannot remove quote");
                                 current_input = quote_selected.0;
@@ -271,7 +275,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     &mut main_category_state,
                                     &mut quote_single_category_state,
                                 );
-                                remove_quote_by_quote(&mut quote_single_category_state, quote)
+                                remove_quote_by_quote(&mut quote_single_category_state, &quote)
                                     .expect("cannot remove quote");
                             }
                             _ => {}

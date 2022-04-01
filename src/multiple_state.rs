@@ -44,7 +44,7 @@ impl MultipleListState {
         self.highlighted = index;
     }
 
-    pub fn highlighted(&self) -> Option<usize> {
+    pub const fn highlighted(&self) -> Option<usize> {
         self.highlighted
     }
 }
@@ -89,34 +89,34 @@ impl<'a> MultipleList<'a> {
     }
 
     #[allow(dead_code)]
-    pub fn style(mut self, style: Style) -> MultipleList<'a> {
+    pub const fn style(mut self, style: Style) -> MultipleList<'a> {
         self.style = style;
         self
     }
 
     #[allow(dead_code)]
-    pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> MultipleList<'a> {
+    pub const fn highlight_symbol(mut self, highlight_symbol: &'a str) -> MultipleList<'a> {
         self.highlight_symbol = Some(highlight_symbol);
         self
     }
 
-    pub fn both_style(mut self, style: Style) -> MultipleList<'a> {
+    pub const fn both_style(mut self, style: Style) -> MultipleList<'a> {
         self.both_style = style;
         self
     }
 
-    pub fn non_select_style(mut self, style: Style) -> MultipleList<'a> {
+    pub const fn non_select_style(mut self, style: Style) -> MultipleList<'a> {
         self.non_select_style = style;
         self
     }
 
-    pub fn highlight_style(mut self, style: Style) -> MultipleList<'a> {
+    pub const fn highlight_style(mut self, style: Style) -> MultipleList<'a> {
         self.highlight_style = style;
         self
     }
 
     #[allow(dead_code)]
-    pub fn start_corner(mut self, corner: Corner) -> MultipleList<'a> {
+    pub const fn start_corner(mut self, corner: Corner) -> MultipleList<'a> {
         self.start_corner = corner;
         self
     }
