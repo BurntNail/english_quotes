@@ -1,59 +1,26 @@
-use std::cmp::Ordering;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
+
+lazy_static! {
+    pub static ref ALL_PERMS: Vec<String> = {
+        std::fs::read_to_string("types.txt")
+            .expect("Could not read types.txt file!")
+            .split("\n")
+        .map(|ty| {
+            if ty.contains("\r") {
+                let len = ty.len();
+                &ty[..len-1]
+            } else {
+                ty
+            }.to_string()
+        })
+            .collect()
+    };
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Quote(pub String, pub Vec<String>);
-
-pub const ALL_PERMS: &[&str] = &[
-    "Character: Arthur Kipps",
-    "Character: The Woman in Black",
-    "Character: Stella",
-    "Character: Esme",
-    "Character: Isabel",
-    "Character: Spider",
-    "Character: Mr Bently",
-    "Character: Samuel Daily",
-    "Character: Mrs Daily",
-    "Character: Mrs Drablow",
-    "Character: Nathaniel",
-    "Characters: The People of Crythin Gifford",
-    "Theme: Women",
-    "Theme: Gothic Horror",
-    "Theme: Innocence",
-    "Theme: Mystery & Secrets",
-    "Theme: Supernatural",
-    "Location: Crythin Gifford",
-    "Location: The Daily Manor",
-    "Location: The Gifford Arms",
-    "Location: Eel Marsh House",
-    "Location: Monk's Piece",
-    "Location: Nine Lives Causway + Marshes",
-    "General",
-    "Character: Arthur Kipps",
-    "Character: The Woman in Black",
-    "Character: Stella",
-    "Character: Esme",
-    "Character: Isabel",
-    "Character: Spider",
-    "Character: Mr Bently",
-    "Character: Samuel Daily",
-    "Character: Mrs Daily",
-    "Character: Mrs Drablow",
-    "Character: Nathaniel",
-    "Characters: The People of Crythin Gifford",
-    "Theme: Women",
-    "Theme: Gothic Horror",
-    "Theme: Innocence",
-    "Theme: Mystery & Secrets",
-    "Theme: Supernatural",
-    "Location: Crythin Gifford",
-    "Location: The Daily Manor",
-    "Location: The Gifford Arms",
-    "Location: Eel Marsh House",
-    "Location: Monk's Piece",
-    "Location: Nine Lives Causway + Marshes",
-    "General",
-];
 
 impl Eq for Quote {}
 
@@ -66,7 +33,6 @@ impl PartialEq for Quote {
         l2.sort();
 
         (self.0 == other.0) && (l1 == l2)
-
     }
 }
 

@@ -49,15 +49,15 @@ pub fn get_quote(category_state: &mut ListState, item_state: &mut ListState) -> 
         .unwrap()
 }
 
-pub fn sort_list () -> Result<(), Error>{
+pub fn sort_list() -> Result<(), Error> {
     let mut db: Vec<_> = read_db()?
-    .into_iter()
-    .map(|quote| {
-        let mut l = quote.1.clone();
-        l.sort();
+        .into_iter()
+        .map(|quote| {
+            let mut l = quote.1.clone();
+            l.sort();
 
-        Quote(quote.0, l)
-    })
+            Quote(quote.0, l)
+        })
         .collect();
     db.sort();
 

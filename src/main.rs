@@ -1,7 +1,6 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::all)]
 #![warn(clippy::nursery)]
-
 #![allow(clippy::module_name_repetitions)]
 
 mod db;
@@ -163,7 +162,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     rect.render_widget(entry, vertical_menu_chunk[1]);
                 }
                 MenuItem::QuoteCategory => {
-                    let q = ALL_PERMS[main_category_state.selected().expect("quote type selected")].to_string();
+                    let q = ALL_PERMS[main_category_state.selected().expect("quote type selected")]
+                        .to_string();
                     let db = read_db().expect("can read db");
                     let qs: Vec<_> = db
                         .into_iter()
@@ -190,15 +190,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         match event.code {
                             KeyCode::Esc => active_menu_item = MenuItem::Quotes,
                             KeyCode::Enter => {
-                                let indices: Vec<&str> = entry_category_state
+                                let indices: Vec<String> = entry_category_state
                                     .selected()
                                     .expect("type(s) selected")
                                     .into_iter()
-                                    .map(|index| ALL_PERMS[index])
+                                    .map(|index| ALL_PERMS[index].clone())
                                     .collect();
 
-                                add_quote_to_db(Quote(current_input.trim().to_string(), indices.into_iter().map(Into::into).collect()))
-                                    .expect("cannot add quote");
+                                add_quote_to_db(Quote(
+                                    current_input.trim().to_string(),
+                                    indices.into_iter().map(Into::into).collect(),
+                                ))
+                                .expect("cannot add quote");
                                 current_input.clear();
                             }
                             KeyCode::Backspace => {
@@ -241,7 +244,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     if let Event::Input(event) = event {
                         let amt_quotes = {
                             let q = ALL_PERMS
-                                [main_category_state.selected().expect("quote type selected")].to_string();
+                                [main_category_state.selected().expect("quote type selected")]
+                            .to_string();
                             read_db()
                                 .expect("can read db")
                                 .iter()
