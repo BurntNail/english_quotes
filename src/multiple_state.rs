@@ -83,6 +83,7 @@ impl<'a> MultipleList<'a> {
         }
     }
 
+    #[allow(clippy::missing_const_for_fn)]
     pub fn block(mut self, block: Block<'a>) -> MultipleList<'a> {
         self.block = Some(block);
         self
@@ -125,6 +126,7 @@ impl<'a> MultipleList<'a> {
 impl<'a> StatefulWidget for MultipleList<'a> {
     type State = MultipleListState;
 
+    #[allow(clippy::cast_possible_truncation)]
     fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.style);
         let list_area = match self.block.take() {
@@ -188,17 +190,16 @@ impl<'a> StatefulWidget for MultipleList<'a> {
             .skip(state.offset)
             .take(end - start)
         {
-            let (x, y) = match self.start_corner {
-                Corner::BottomLeft => {
-                    current_height += item.height() as u16;
-                    (list_area.left(), list_area.bottom() - current_height)
-                }
-                _ => {
-                    let pos = (list_area.left(), list_area.top() + current_height);
-                    current_height += item.height() as u16;
-                    pos
-                }
+            let (x, y) = if self.start_corner == Corner::BottomLeft {
+                current_height += item.height() as u16;
+                (list_area.left(), list_area.bottom() - current_height)
+            } else {
+                let pos = (list_area.left(), list_area.top() + current_height);
+                current_height += item.height() as u16;
+                pos
+    
             };
+            
             let area = Rect {
                 x,
                 y,
@@ -209,7 +210,7 @@ impl<'a> StatefulWidget for MultipleList<'a> {
             buf.set_style(area, item_style);
 
             let is_selected = state.selected.contains(&i);
-            let is_highlighted = state.highlighted.map(|x| x == i).unwrap_or(false);
+            let is_highlighted = state.highlighted.map_or(false, |x| x == i);
 
             let elem_x = if has_selection {
                 let symbol = if is_selected || is_highlighted {
@@ -229,7 +230,7 @@ impl<'a> StatefulWidget for MultipleList<'a> {
             }
 
             if is_highlighted && is_selected {
-                buf.set_style(area, self.both_style)
+                buf.set_style(area, self.both_style);
             } else if is_selected {
                 buf.set_style(area, self.highlight_style);
             } else if is_highlighted {
@@ -257,7 +258,7 @@ impl<'a> MultipleListItem<'a> {
     }
 
     #[allow(dead_code)]
-    pub fn style(mut self, style: Style) -> MultipleListItem<'a> {
+    pub const fn style(mut self, style: Style) -> MultipleListItem<'a> {
         self.style = style;
         self
     }

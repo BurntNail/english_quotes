@@ -3,7 +3,7 @@ pub mod events;
 pub mod exports;
 pub mod render;
 
-use thiserror::*;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {

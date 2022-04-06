@@ -200,7 +200,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                                 add_quote_to_db(Quote(
                                     current_input.trim().to_string(),
-                                    indices.into_iter().map(Into::into).collect(),
+                                    indices
                                 ))
                                 .expect("cannot add quote");
                                 current_input.clear();
@@ -255,7 +255,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         };
                         match event.code {
                             KeyCode::Down => {
-                                down_arrow(&mut quote_single_category_state, amt_quotes)
+                                down_arrow(&mut quote_single_category_state, amt_quotes);
                             }
                             KeyCode::Up => up_arrow(&mut quote_single_category_state, amt_quotes),
                             KeyCode::Esc => {

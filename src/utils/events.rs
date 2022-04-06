@@ -16,7 +16,7 @@ pub fn down_arrow(state: &mut ListState, amt: usize) {
         if selected >= amt - 1 {
             state.select(Some(0));
         } else {
-            state.select(Some(selected + 1))
+            state.select(Some(selected + 1));
         }
     }
 }
@@ -26,7 +26,7 @@ pub fn up_arrow(state: &mut ListState, amt: usize) {
         if selected > 0 {
             state.select(Some(selected - 1));
         } else {
-            state.select(Some(amt - 1))
+            state.select(Some(amt - 1));
         }
     }
 }

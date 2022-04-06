@@ -66,8 +66,8 @@ impl PartialOrd for Quote {
     }
 }
 
-impl PartialEq<&Quote> for Quote {
-    fn eq(&self, other: &&Quote) -> bool {
+impl PartialEq<&Self> for Quote {
+    fn eq(&self, other: &&Self) -> bool {
         self.1 == other.1 && self.0 == other.0
     }
 }

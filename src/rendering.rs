@@ -69,7 +69,7 @@ pub fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>)
         .iter()
         .map(|quote| {
             ListItem::new(Spans::from(vec![Span::styled(
-                format!("{}", quote),
+                quote,
                 Style::default(),
             )]))
         })
@@ -89,7 +89,7 @@ pub fn render_entry(current_input: &str) -> (MultipleList, Paragraph) {
         .iter()
         .map(|quote| {
             MultipleListItem::new(Spans::from(vec![Span::styled(
-                format!("{}", quote),
+                quote,
                 Style::default(),
             )]))
         })
