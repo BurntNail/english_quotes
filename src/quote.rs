@@ -1,82 +1,26 @@
-use std::cmp::Ordering;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
-use enum_derive_list::AllVariants;
+use std::cmp::Ordering;
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize, Copy, Clone, AllVariants)]
-pub enum QuoteType {
-    //Characters
-    ArthurKipps,
-    WomanInBlack,
-    Stella,
-    Esme,
-    Isabel,
-    Spider,
-    MrBently,
-    SamuelDaily,
-    MrsDaily,
-    Drablow,
-    Nathaniel,
-    CGPeople,
-    //Themes
-    Women,
-    GothicHorror,
-    Secrecy,
-    Innocence,
-    Supernatural,
-    //Locations
-    CrythinGifford,
-    DailyManor,
-    GiffordArms,
-    EelMarshHouse,
-    MonksPiece,
-    NLCAndMarshes,
-    //Other
-    Other,
-}
-
-use QuoteType::*;
-
-impl Default for QuoteType {
-    fn default() -> Self {
-        Other
-    }
-}
-impl Display for QuoteType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ArthurKipps => write!(f, "Character: Arthur Kipps"),
-            WomanInBlack => write!(f, "Character: The Woman in Black"),
-            Stella => write!(f, "Character: Stella"),
-            Esme => write!(f, "Character: Esme"),
-            Isabel => write!(f, "Character: Isabel"),
-            Spider => write!(f, "Character: Spider"),
-            MrBently => write!(f, "Character: Mr Bently"),
-            SamuelDaily => write!(f, "Character: Samuel Daily"),
-            MrsDaily => write!(f, "Character: Mrs Daily"),
-            Drablow => write!(f, "Character: Mrs Drablow"),
-            Nathaniel => write!(f, "Character: Nathaniel"),
-            CGPeople => write!(f, "Characters: The People of Crythin Gifford"),
-            Women => write!(f, "Theme: Women"),
-            GothicHorror => write!(f, "Theme: Gothic Horror"),
-            Innocence => write!(f, "Theme: Innocence"),
-            Secrecy => write!(f, "Theme: Mystery & Secrets"),
-            Supernatural => write!(f, "Theme: Supernatural"),
-            CrythinGifford => write!(f, "Location: Crythin Gifford"),
-            DailyManor => write!(f, "Location: The Daily Manor"),
-            GiffordArms => write!(f, "Location: The Gifford Arms"),
-            EelMarshHouse => write!(f, "Location: Eel Marsh House"),
-            MonksPiece => write!(f, "Location: Monk's Piece"),
-            NLCAndMarshes => write!(f, "Location: Nine Lives Causway + Marshes"),
-            Other => write!(f, "General"),
-        }
-    }
+lazy_static! {
+    pub static ref ALL_PERMS: Vec<String> = {
+        std::fs::read_to_string("types.txt")
+            .expect("Could not read types.txt file!")
+            .split("\n")
+        .map(|ty| {
+            if ty.contains("\r") {
+                let len = ty.len();
+                &ty[..len-1]
+            } else {
+                ty
+            }.to_string()
+        })
+            .collect()
+    };
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Quote(pub String, pub Vec<QuoteType>);
-
-pub const ALL_PERMS: &[QuoteType] = QuoteType::all_variants();
+pub struct Quote(pub String, pub Vec<String>);
 
 impl Eq for Quote {}
 
@@ -89,7 +33,6 @@ impl PartialEq for Quote {
         l2.sort();
 
         (self.0 == other.0) && (l1 == l2)
-
     }
 }
 

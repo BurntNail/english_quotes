@@ -41,27 +41,28 @@ pub fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>)
         Table::new(vec![]).block(default_block().title("No Quotes to List"))
     } else {
         let selected_type = ALL_PERMS[quotes_list_state
-        .selected()
-        .expect("there is always a selected type in the types list")];
-    let rows: Vec<_> = quotes_list
-        .into_iter()
-        .filter(|quote| quote.1.contains(&selected_type))
-        .map(|quote| {
-            Row::new(vec![
-                Span::raw(format!("{:?}", quote.1)),
-                Span::raw(quote.0),
-            ])
-        })
-        .collect();
+            .selected()
+            .expect("there is always a selected type in the types list")]
+        .to_string();
 
-    Table::new(rows)
-        .header(Row::new(vec![
-            Span::styled("Type", Style::default().add_modifier(Modifier::BOLD)),
-            Span::styled("Contents", Style::default().add_modifier(Modifier::BOLD)),
-        ]))
-        .block(default_block().title("Quote Details"))
-        .widths(&[Constraint::Percentage(33), Constraint::Percentage(66)])
+        let rows: Vec<_> = quotes_list
+            .into_iter()
+            .filter(|quote| quote.1.contains(&selected_type))
+            .map(|quote| {
+                Row::new(vec![
+                    Span::raw(format!("{:?}", quote.1)),
+                    Span::raw(quote.0),
+                ])
+            })
+            .collect();
 
+        Table::new(rows)
+            .header(Row::new(vec![
+                Span::styled("Type", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Contents", Style::default().add_modifier(Modifier::BOLD)),
+            ]))
+            .block(default_block().title("Quote Details"))
+            .widths(&[Constraint::Percentage(33), Constraint::Percentage(66)])
     };
 
     let items: Vec<ListItem> = ALL_PERMS
