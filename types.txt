@@ -1,24 +1,28 @@
-Character: Arthur Kipps
-Character: The Woman in Black
-Character: Stella
-Character: Esme
-Character: Isabel
-Character: Spider
-Character: Mr Bently
-Character: Samuel Daily
-Character: Mrs Daily
-Character: Mrs Drablow
-Character: Nathaniel
-Characters: The People of Crythin Gifford
-Theme: Women
-Theme: Gothic Horror
-Theme: Innocence
-Theme: Mystery & Secrets
-Theme: Supernatural
-Location: Crythin Gifford
-Location: The Daily Manor
-Location: The Gifford Arms
-Location: Eel Marsh House
-Location: Monk's Piece
-Location: Nine Lives Causway + Marshes
-General
+//Character
+ArthurKipps
+WomanInBlack
+Stella
+Esme
+Isabel
+Spider
+MrBently
+SamuelDaily
+MrsDaily
+Drablow
+Nathaniel
+CGPeople
+//Theme
+Women
+GothicHorror
+Secrecy
+Innocence
+Supernatural
+//Location
+CrythinGifford
+DailyManor
+GiffordArms
+EelMarshHouse
+MonksPiece
+NLCAndMarshes
+//Othe
+Other

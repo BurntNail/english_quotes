@@ -6,9 +6,10 @@ lazy_static! {
     pub static ref ALL_PERMS: Vec<String> = {
         std::fs::read_to_string("types.txt")
             .expect("Could not read types.txt file!")
-            .split("\n")
+            .split('\n')
+            .filter(|ty| !ty.contains("//"))
         .map(|ty| {
-            if ty.contains("\r") {
+            if ty.contains('\r') {
                 let len = ty.len();
                 &ty[..len-1]
             } else {

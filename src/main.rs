@@ -41,6 +41,7 @@ use tui::{
 
 //based off https://blog.logrocket.com/rust-and-tui-building-a-command-line-interface-in-rust/
 
+#[allow(clippy::too_many_lines)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     if std::env::var_os("RUST_BACKTRACE").is_none() {
         std::env::set_var("RUST_BACKTRACE", "full");
