@@ -1,4 +1,4 @@
-use crate::quote::{QuoteType, ALL_PERMS};
+use crate::quote::ALL_PERMS;
 use tui::{
     buffer::Buffer,
     layout::{Corner, Rect},
@@ -34,7 +34,7 @@ impl MultipleListState {
         }
     }
 
-    pub fn select_multiple(&mut self, indices: &[QuoteType]) {
+    pub fn select_multiple(&mut self, indices: &[String]) {
         for i in indices {
             self.select(ALL_PERMS.iter().position(|x| x == i).unwrap());
         }

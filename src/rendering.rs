@@ -42,7 +42,8 @@ pub fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>)
     } else {
         let selected_type = ALL_PERMS[quotes_list_state
         .selected()
-        .expect("there is always a selected type in the types list")];
+        .expect("there is always a selected type in the types list")].to_string();
+        
     let rows: Vec<_> = quotes_list
         .into_iter()
         .filter(|quote| quote.1.contains(&selected_type))

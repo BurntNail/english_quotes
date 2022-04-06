@@ -2,6 +2,8 @@
 #![warn(clippy::all)]
 #![warn(clippy::nursery)]
 
+#![allow(clippy::module_name_repetitions)]
+
 mod db;
 mod multiple_state;
 mod quote;
@@ -11,7 +13,7 @@ mod utils;
 use crate::{
     db::{add_quote_to_db, get_quote, read_db, remove_quote_by_quote, sort_list},
     multiple_state::MultipleListState,
-    quote::{Quote, QuoteType, ALL_PERMS},
+    quote::{Quote, ALL_PERMS},
     rendering::{render_entry, render_home, render_quotes},
     utils::{
         events::{default_state, down_arrow, up_arrow, Event},
@@ -161,7 +163,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     rect.render_widget(entry, vertical_menu_chunk[1]);
                 }
                 MenuItem::QuoteCategory => {
-                    let q = ALL_PERMS[main_category_state.selected().expect("quote type selected")];
+                    let q = ALL_PERMS[main_category_state.selected().expect("quote type selected")].to_string();
                     let db = read_db().expect("can read db");
                     let qs: Vec<_> = db
                         .into_iter()
@@ -188,14 +190,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         match event.code {
                             KeyCode::Esc => active_menu_item = MenuItem::Quotes,
                             KeyCode::Enter => {
-                                let indices: Vec<QuoteType> = entry_category_state
+                                let indices: Vec<&str> = entry_category_state
                                     .selected()
                                     .expect("type(s) selected")
                                     .into_iter()
                                     .map(|index| ALL_PERMS[index])
                                     .collect();
 
-                                add_quote_to_db(Quote(current_input.trim().to_string(), indices))
+                                add_quote_to_db(Quote(current_input.trim().to_string(), indices.into_iter().map(Into::into).collect()))
                                     .expect("cannot add quote");
                                 current_input.clear();
                             }
@@ -239,7 +241,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     if let Event::Input(event) = event {
                         let amt_quotes = {
                             let q = ALL_PERMS
-                                [main_category_state.selected().expect("quote type selected")];
+                                [main_category_state.selected().expect("quote type selected")].to_string();
                             read_db()
                                 .expect("can read db")
                                 .iter()

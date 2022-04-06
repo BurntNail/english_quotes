@@ -7,12 +7,13 @@ pub fn export() {
     writeln!(f, "# Jack's WIB Quotes\n").unwrap();
 
     for perm in ALL_PERMS {
+        let perm = perm.to_string();
         writeln!(f, "## {}", perm).unwrap();
         list.clone()
             .into_iter()
-            .filter(|quote| quote.1.contains(perm))
+            .filter(|quote| quote.1.contains(&perm))
             .for_each(|quote| {
-                let index = quote.1.iter().position(|x| x == perm);
+                let index = quote.1.iter().position(|x| x == &perm);
                 let mut new_list = quote.1;
                 new_list.remove(index.unwrap());
 

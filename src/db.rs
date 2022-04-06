@@ -42,7 +42,7 @@ pub fn get_quote(category_state: &mut ListState, item_state: &mut ListState) -> 
     let quote_type_index = category_state.selected().expect("quote type selected");
     let db = read_db().expect("can read db");
 
-    let q = ALL_PERMS[quote_type_index];
+    let q = ALL_PERMS[quote_type_index].to_string();
     db.into_iter()
         .filter(|quote| quote.1.contains(&q))
         .nth(item_state.selected().unwrap_or_default())
