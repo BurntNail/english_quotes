@@ -23,7 +23,8 @@ pub fn render_home<'a>() -> Paragraph<'a> {
 		Either::l(""),
 		Either::r(coloured_span("quotes-TUI", Color::LightBlue)),
 		Either::l(""),
-		Either::l("Press 'q' to access the Quotes, 'e' to enter a new Quote, 'h' to get back home, and 'g' to exit.")
+		Either::l("Press 'q' to access the Quotes, 'e' to enter a new Quote, 'h' to get back home, and 'g' to exit."),
+        Either::l("Once in entry mode, use arrow keys to highlight and Tab to select.")
 	])
 		.alignment(Alignment::Center)
 		.block(

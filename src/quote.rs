@@ -4,8 +4,9 @@ use std::cmp::Ordering;
 
 lazy_static! {
     pub static ref ALL_PERMS: Vec<String> = {
-        std::fs::read_to_string("types.txt")
-            .expect("Could not read types.txt file!")
+        let location = FileType::Types.get_location();
+        std::fs::read_to_string(&location)
+            .expect(&format!("Could not find t.t at {}", location))
             .split('\n')
             .filter(|ty| !ty.contains("//"))
         .map(|ty| {
@@ -18,6 +19,23 @@ lazy_static! {
         })
             .collect()
     };
+}
+
+
+pub enum FileType {
+    Database,
+    Types,
+    Export
+}
+
+impl FileType {
+    pub fn get_location (&self) -> &'static str {
+        match self {
+            Self::Database => "db.json",
+            Self::Types => "types.txt",
+            Self::Export => "export.md",
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

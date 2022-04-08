@@ -1,9 +1,9 @@
-use crate::{db::read_db, ALL_PERMS};
+use crate::{db::read_db, ALL_PERMS, quote::FileType};
 use std::{fs::File, io::Write};
 
 pub fn export() {
     let list = read_db().expect("a database needs to exist");
-    let mut f = File::create("export.md").expect("need to be able to open the file");
+    let mut f = File::create(FileType::Export.get_location()).expect("need to be able to open the file");
     writeln!(f, "# Jack's WIB Quotes\n").unwrap();
 
     for perm in ALL_PERMS.iter() {

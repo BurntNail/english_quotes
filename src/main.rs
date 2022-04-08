@@ -193,7 +193,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             KeyCode::Enter => {
                                 let indices: Vec<String> = entry_category_state
                                     .selected()
-                                    .expect("type(s) selected")
+                                    .unwrap_or_default()
                                     .into_iter()
                                     .map(|index| ALL_PERMS[index].clone())
                                     .collect();
