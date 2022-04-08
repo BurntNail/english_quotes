@@ -116,3 +116,33 @@ pub fn render_entry(current_input: &str) -> (MultipleList, Paragraph) {
 
     (list, para)
 }
+
+pub fn render_finder(current_input: &str) -> (Paragraph, List, Vec<String>) {
+    
+    let items: Vec<String> = read_db().unwrap_or_default()
+        .into_iter()
+        .map(|quote| quote.0)
+        .filter(|quote| quote.contains(current_input))
+        .collect();
+    
+    let list = List::new(items.clone().into_iter().map(|string| {
+        ListItem::new(Span::from(string))
+    }).collect::<Vec<ListItem>>())
+        .block(default_block().title("Search results:"))
+        .highlight_style(default_style());
+    
+    let para = Paragraph::new(vec![
+        Spans::from(vec![Span::raw("")]),
+        Spans::from(vec![Span::raw(
+            "Enter in your search terms:",
+        )]),
+        Spans::from(vec![Span::raw("")]),
+        Spans::from(vec![Span::raw(current_input)]),
+        Spans::from(vec![Span::raw("")]),
+    ])
+        .alignment(Alignment::Center)
+        .block(default_block().title("Search Entry"));
+    
+    (para, list, items)
+}
+

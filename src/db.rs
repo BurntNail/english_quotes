@@ -52,6 +52,12 @@ pub fn get_quote(category_state: &mut ListState, item_state: &mut ListState) -> 
         .unwrap()
 }
 
+pub fn get_quote_by_content (content: &str) -> Option<Quote> {
+    read_db().unwrap_or_default()
+        .into_iter()
+        .find(|quote| &quote.0 == content)
+}
+
 pub fn sort_list() -> Result<(), Error> {
     let mut db: Vec<_> = read_db()?
         .into_iter()

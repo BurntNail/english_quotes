@@ -39,6 +39,11 @@ impl MultipleListState {
             self.select(ALL_PERMS.iter().position(|x| x == i).unwrap());
         }
     }
+    
+    pub fn clear (&mut self) {
+        self.selected.clear();
+        self.highlighted = None;
+    }
 
     pub fn highlight(&mut self, index: Option<usize>) {
         self.highlighted = index;

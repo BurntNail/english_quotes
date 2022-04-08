@@ -19,6 +19,7 @@ pub enum MenuItem {
     Quotes,
     Entry,
     QuoteCategory,
+    Find,
 }
 
 impl From<MenuItem> for usize {
@@ -27,6 +28,7 @@ impl From<MenuItem> for usize {
             MenuItem::Home => 0,
             MenuItem::Quotes => 1,
             MenuItem::Entry => 2,
+            MenuItem::Find => 3,
             MenuItem::QuoteCategory => 4,
         }
     }

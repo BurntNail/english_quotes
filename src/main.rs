@@ -38,6 +38,8 @@ use tui::{
     widgets::{Block, Borders, List, ListItem, Paragraph, Tabs},
     Terminal,
 };
+use crate::rendering::render_finder;
+use crate::db::get_quote_by_content;
 
 //based off https://blog.logrocket.com/rust-and-tui-building-a-command-line-interface-in-rust/
 
@@ -74,13 +76,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = Terminal::new(CrosstermBackend::new(std::io::stdout()))?;
     terminal.clear()?;
 
-    let menu_titles = vec!["View", "Quotes", "Entry"];
+    let menu_titles = vec!["Home", "Quotes", "Entry", "Find"];
     let mut active_menu_item = MenuItem::Home;
 
     let mut main_category_state = default_state();
     let mut entry_category_state = MultipleListState::default();
     entry_category_state.highlight(Some(0));
     let mut quote_single_category_state = default_state();
+    let mut find_quote_state = default_state();
+    let mut find_quote_list = vec![];
 
     let mut current_input = String::new();
 
@@ -121,6 +125,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let vertical_menu_chunk = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref());
+    
+    let horizontal_split = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(33), Constraint::Percentage(66)].as_ref());
 
     //endregion
 
@@ -139,6 +147,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .divider(Span::raw("|"));
 
             let vertical_menu_chunk = vertical_menu_chunk.split(chunks[1]);
+            let horiz_menu_chunk = horizontal_split.split(chunks[1]);
 
             rect.render_widget(tabs, chunks[0]);
 
@@ -161,6 +170,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         &mut entry_category_state,
                     );
                     rect.render_widget(entry, vertical_menu_chunk[1]);
+                },
+                MenuItem::Find => {
+                    let (entry, results, quotes_list) = render_finder(current_input.as_str());
+                    rect.render_widget(entry, horiz_menu_chunk[0]);
+                    rect.render_stateful_widget(
+                        results,
+                        horiz_menu_chunk[1],
+                        &mut find_quote_state
+                    );
+                    find_quote_list = quotes_list;
                 }
                 MenuItem::QuoteCategory => {
                     let q = ALL_PERMS[main_category_state.selected().expect("quote type selected")]
@@ -189,7 +208,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 MenuItem::Entry => {
                     if let Event::Input(event) = event {
                         match event.code {
-                            KeyCode::Esc => active_menu_item = MenuItem::Quotes,
+                            KeyCode::Esc => active_menu_item = MenuItem::Home,
                             KeyCode::Enter => {
                                 let indices: Vec<String> = entry_category_state
                                     .selected()
@@ -268,12 +287,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     &mut quote_single_category_state,
                                 );
 
+                                entry_category_state.clear();
                                 entry_category_state.select_multiple(&quote_selected.1);
                                 remove_quote_by_quote(
                                     &mut quote_single_category_state,
                                     &quote_selected,
                                 )
                                 .expect("cannot remove quote");
+                                
                                 current_input = quote_selected.0;
                                 active_menu_item = MenuItem::Entry;
                             }
@@ -285,6 +306,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 remove_quote_by_quote(&mut quote_single_category_state, &quote)
                                     .expect("cannot remove quote");
                             }
+                            KeyCode::Char('f') => {
+                                current_input.clear();
+                                active_menu_item = MenuItem::Find;
+                            },
                             _ => {}
                         }
                     }
@@ -302,6 +327,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 current_input.clear();
                                 active_menu_item = MenuItem::Entry;
                             }
+                            KeyCode::Char('f') => {
+                                current_input.clear();
+                                active_menu_item = MenuItem::Find;
+                            },
                             KeyCode::Enter => {
                                 active_menu_item = MenuItem::QuoteCategory;
                             }
@@ -323,11 +352,52 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             active_menu_item = MenuItem::Entry;
                         }
                         KeyCode::Char('q') => active_menu_item = MenuItem::Quotes,
+                        KeyCode::Char('f') => {
+                            current_input.clear();
+                            active_menu_item = MenuItem::Find;
+                        },
                         KeyCode::Char('r') => export(),
                         _ => {}
                     },
                     Event::Tick => {}
                 },
+                MenuItem::Find => if let Event::Input(event) = event {
+                    match event.code {
+                        KeyCode::Esc => active_menu_item = MenuItem::Home,
+                        KeyCode::Char(char) => {
+                            find_quote_state.select(Some(0));
+                            current_input.push(char);
+                        },
+                        KeyCode::Backspace => {
+                            if !current_input.is_empty() {
+                                current_input.remove(current_input.len() - 1);
+                            }
+                        },
+                        KeyCode::Up => up_arrow(&mut find_quote_state, find_quote_list.len()),
+                        KeyCode::Down => down_arrow(&mut find_quote_state, find_quote_list.len()),
+                        KeyCode::Enter => {
+                            let quote = get_quote_by_content(&find_quote_list[find_quote_state.selected().unwrap_or_default()]);
+                            match quote {
+                                Some(quote) => {
+                                    entry_category_state.clear();
+                                    entry_category_state.select_multiple(&quote.1);
+                                    remove_quote_by_quote(
+                                        &mut quote_single_category_state,
+                                        &quote,
+                                    )
+                                        .expect("cannot remove quote");
+    
+                                    current_input = quote.0;
+                                    active_menu_item = MenuItem::Entry;
+                                }
+                                None => active_menu_item = MenuItem::Quotes
+                            }
+                            
+                            find_quote_list.clear();
+                        }
+                        _ => {}
+                    }
+                }
             }
         }
     }
