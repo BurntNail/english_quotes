@@ -29,7 +29,7 @@ pub enum FileType {
 }
 
 impl FileType {
-    pub fn get_location(&self) -> &'static str {
+    pub const fn get_location(&self) -> &'static str {
         match self {
             Self::Database => "db.json",
             Self::Types => "types.txt",

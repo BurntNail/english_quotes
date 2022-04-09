@@ -62,7 +62,7 @@ pub fn get_quote_by_content(content: &str) -> Option<Quote> {
     read_db()
         .unwrap_or_default()
         .into_iter()
-        .find(|quote| &quote.0 == content)
+        .find(|quote| quote.0 == content)
 }
 
 pub fn sort_list() -> Result<(), Error> {

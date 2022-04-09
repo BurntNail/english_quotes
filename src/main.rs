@@ -1,7 +1,8 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::all)]
 #![warn(clippy::nursery)]
-#![allow(clippy::module_name_repetitions)]
+
+#![allow(clippy::module_name_repetitions, clippy::expect_fun_call)]
 
 mod db;
 mod multiple_state;
@@ -374,7 +375,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                             KeyCode::Up => up_arrow(&mut find_quote_state, find_quote_list.len()),
                             KeyCode::Down => {
-                                down_arrow(&mut find_quote_state, find_quote_list.len())
+                                down_arrow(&mut find_quote_state, find_quote_list.len());
                             }
                             KeyCode::Enter => {
                                 let quote = get_quote_by_content(
@@ -398,6 +399,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 }
 
                                 find_quote_list.clear();
+                            },
+                            KeyCode::Delete => {
+                                if let Some(quote) = get_quote_by_content(
+                                    &find_quote_list
+                                        [find_quote_state.selected().unwrap_or_default()],
+                                ) {
+                                    remove_quote_by_quote(
+                                        &mut quote_single_category_state,
+                                        &quote,
+                                    )
+                                    .expect("cannot remove quote");
+                                }
                             }
                             _ => {}
                         }
