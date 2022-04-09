@@ -10,10 +10,12 @@ mod rendering;
 mod utils;
 
 use crate::{
-    db::{add_quote_to_db, get_quote, read_db, remove_quote_by_quote, sort_list},
+    db::{
+        add_quote_to_db, get_quote, get_quote_by_content, read_db, remove_quote_by_quote, sort_list,
+    },
     multiple_state::MultipleListState,
     quote::{Quote, ALL_PERMS},
-    rendering::{render_entry, render_home, render_quotes},
+    rendering::{render_entry, render_finder, render_home, render_quotes},
     utils::{
         events::{default_state, down_arrow, up_arrow, Event},
         exports::export,
@@ -38,10 +40,9 @@ use tui::{
     widgets::{Block, Borders, List, ListItem, Paragraph, Tabs},
     Terminal,
 };
-use crate::rendering::render_finder;
-use crate::db::get_quote_by_content;
 
 //based off https://blog.logrocket.com/rust-and-tui-building-a-command-line-interface-in-rust/
+///But now much farther along than that project ever was
 
 #[allow(clippy::too_many_lines)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -125,7 +126,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let vertical_menu_chunk = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref());
-    
+
     let horizontal_split = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(33), Constraint::Percentage(66)].as_ref());
@@ -170,14 +171,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         &mut entry_category_state,
                     );
                     rect.render_widget(entry, vertical_menu_chunk[1]);
-                },
+                }
                 MenuItem::Find => {
                     let (entry, results, quotes_list) = render_finder(current_input.as_str());
                     rect.render_widget(entry, horiz_menu_chunk[0]);
                     rect.render_stateful_widget(
                         results,
                         horiz_menu_chunk[1],
-                        &mut find_quote_state
+                        &mut find_quote_state,
                     );
                     find_quote_list = quotes_list;
                 }
@@ -217,11 +218,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .map(|index| ALL_PERMS[index].clone())
                                     .collect();
 
-                                add_quote_to_db(Quote(
-                                    current_input.trim().to_string(),
-                                    indices
-                                ))
-                                .expect("cannot add quote");
+                                add_quote_to_db(Quote(current_input.trim().to_string(), indices))
+                                    .expect("cannot add quote");
                                 current_input.clear();
                             }
                             KeyCode::Backspace => {
@@ -294,7 +292,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     &quote_selected,
                                 )
                                 .expect("cannot remove quote");
-                                
+
                                 current_input = quote_selected.0;
                                 active_menu_item = MenuItem::Entry;
                             }
@@ -309,7 +307,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             KeyCode::Char('f') => {
                                 current_input.clear();
                                 active_menu_item = MenuItem::Find;
-                            },
+                            }
                             _ => {}
                         }
                     }
@@ -330,8 +328,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             KeyCode::Char('f') => {
                                 current_input.clear();
                                 active_menu_item = MenuItem::Find;
-                            },
-                            KeyCode::Enter => {
+                            }
+                            KeyCode::Tab => {
                                 active_menu_item = MenuItem::QuoteCategory;
                             }
                             KeyCode::Down => down_arrow(&mut main_category_state, ALL_PERMS.len()),
@@ -355,47 +353,54 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         KeyCode::Char('f') => {
                             current_input.clear();
                             active_menu_item = MenuItem::Find;
-                        },
+                        }
                         KeyCode::Char('r') => export(),
                         _ => {}
                     },
                     Event::Tick => {}
                 },
-                MenuItem::Find => if let Event::Input(event) = event {
-                    match event.code {
-                        KeyCode::Esc => active_menu_item = MenuItem::Home,
-                        KeyCode::Char(char) => {
-                            find_quote_state.select(Some(0));
-                            current_input.push(char);
-                        },
-                        KeyCode::Backspace => {
-                            if !current_input.is_empty() {
-                                current_input.remove(current_input.len() - 1);
+                MenuItem::Find => {
+                    if let Event::Input(event) = event {
+                        match event.code {
+                            KeyCode::Esc => active_menu_item = MenuItem::Home,
+                            KeyCode::Char(char) => {
+                                find_quote_state.select(Some(0));
+                                current_input.push(char);
                             }
-                        },
-                        KeyCode::Up => up_arrow(&mut find_quote_state, find_quote_list.len()),
-                        KeyCode::Down => down_arrow(&mut find_quote_state, find_quote_list.len()),
-                        KeyCode::Enter => {
-                            let quote = get_quote_by_content(&find_quote_list[find_quote_state.selected().unwrap_or_default()]);
-                            match quote {
-                                Some(quote) => {
-                                    entry_category_state.clear();
-                                    entry_category_state.select_multiple(&quote.1);
-                                    remove_quote_by_quote(
-                                        &mut quote_single_category_state,
-                                        &quote,
-                                    )
-                                        .expect("cannot remove quote");
-    
-                                    current_input = quote.0;
-                                    active_menu_item = MenuItem::Entry;
+                            KeyCode::Backspace => {
+                                if !current_input.is_empty() {
+                                    current_input.remove(current_input.len() - 1);
                                 }
-                                None => active_menu_item = MenuItem::Quotes
                             }
-                            
-                            find_quote_list.clear();
+                            KeyCode::Up => up_arrow(&mut find_quote_state, find_quote_list.len()),
+                            KeyCode::Down => {
+                                down_arrow(&mut find_quote_state, find_quote_list.len())
+                            }
+                            KeyCode::Enter => {
+                                let quote = get_quote_by_content(
+                                    &find_quote_list
+                                        [find_quote_state.selected().unwrap_or_default()],
+                                );
+                                match quote {
+                                    Some(quote) => {
+                                        entry_category_state.clear();
+                                        entry_category_state.select_multiple(&quote.1);
+                                        remove_quote_by_quote(
+                                            &mut quote_single_category_state,
+                                            &quote,
+                                        )
+                                        .expect("cannot remove quote");
+
+                                        current_input = quote.0;
+                                        active_menu_item = MenuItem::Entry;
+                                    }
+                                    None => active_menu_item = MenuItem::Quotes,
+                                }
+
+                                find_quote_list.clear();
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
                 }
             }

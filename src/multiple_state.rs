@@ -39,8 +39,8 @@ impl MultipleListState {
             self.select(ALL_PERMS.iter().position(|x| x == i).unwrap());
         }
     }
-    
-    pub fn clear (&mut self) {
+
+    pub fn clear(&mut self) {
         self.selected.clear();
         self.highlighted = None;
     }
@@ -202,9 +202,8 @@ impl<'a> StatefulWidget for MultipleList<'a> {
                 let pos = (list_area.left(), list_area.top() + current_height);
                 current_height += item.height() as u16;
                 pos
-    
             };
-            
+
             let area = Rect {
                 x,
                 y,

@@ -9,27 +9,27 @@ lazy_static! {
             .expect(&format!("Could not find t.t at {}", location))
             .split('\n')
             .filter(|ty| !ty.contains("//"))
-        .map(|ty| {
-            if ty.contains('\r') {
-                let len = ty.len();
-                &ty[..len-1]
-            } else {
-                ty
-            }.to_string()
-        })
+            .map(|ty| {
+                if ty.contains('\r') {
+                    let len = ty.len();
+                    &ty[..len - 1]
+                } else {
+                    ty
+                }
+                .to_string()
+            })
             .collect()
     };
 }
 
-
 pub enum FileType {
     Database,
     Types,
-    Export
+    Export,
 }
 
 impl FileType {
-    pub fn get_location (&self) -> &'static str {
+    pub fn get_location(&self) -> &'static str {
         match self {
             Self::Database => "db.json",
             Self::Types => "types.txt",

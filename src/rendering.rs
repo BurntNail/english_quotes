@@ -23,8 +23,11 @@ pub fn render_home<'a>() -> Paragraph<'a> {
 		Either::l(""),
 		Either::r(coloured_span("quotes-TUI", Color::LightBlue)),
 		Either::l(""),
-		Either::l("Press 'q' to access the Quotes, 'e' to enter a new Quote, 'h' to get back home, and 'g' to exit."),
-        Either::l("Once in entry mode, use arrow keys to highlight and Tab to select.")
+		Either::l("Press 'q' to access the Quotes, 'e' to enter a new Quote, 'f' to enter find mode, 'h' to get back home, and 'g' to exit."),
+        Either::l("Once in entry mode, use arrow keys to highlight and Tab to select."),
+        Either::l(""),
+        Either::l("In Quote mode, use arrow keys to browse categories, tab to see just one category, and enter to edit the selected quote."),
+        Either::l("In Find mode, enter text to search, and hit enter to edit the selected quote.")
 	])
 		.alignment(Alignment::Center)
 		.block(
@@ -68,12 +71,7 @@ pub fn render_quotes<'a>(quotes_list_state: &ListState) -> (List<'a>, Table<'a>)
 
     let items: Vec<ListItem> = ALL_PERMS
         .iter()
-        .map(|quote| {
-            ListItem::new(Spans::from(vec![Span::styled(
-                quote,
-                Style::default(),
-            )]))
-        })
+        .map(|quote| ListItem::new(Spans::from(vec![Span::styled(quote, Style::default())])))
         .collect();
 
     let list = List::new(items)
@@ -89,18 +87,24 @@ pub fn render_entry(current_input: &str) -> (MultipleList, Paragraph) {
     let items: Vec<MultipleListItem> = ALL_PERMS
         .iter()
         .map(|quote| {
-            MultipleListItem::new(Spans::from(vec![Span::styled(
-                quote,
-                Style::default(),
-            )]))
+            MultipleListItem::new(Spans::from(vec![Span::styled(quote, Style::default())]))
         })
         .collect();
 
     let list = MultipleList::new(items)
         .block(block)
         .highlight_style(default_style())
-        .non_select_style(default_style().bg(Color::Cyan))
-        .both_style(default_style().bg(Color::Green));
+        .non_select_style(
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .fg(Color::Yellow),
+        )
+        .both_style(
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .bg(Color::Red)
+                .fg(Color::White),
+        );
 
     let para = Paragraph::new(vec![
         Spans::from(vec![Span::raw("")]),
@@ -118,31 +122,32 @@ pub fn render_entry(current_input: &str) -> (MultipleList, Paragraph) {
 }
 
 pub fn render_finder(current_input: &str) -> (Paragraph, List, Vec<String>) {
-    
-    let items: Vec<String> = read_db().unwrap_or_default()
+    let items: Vec<String> = read_db()
+        .unwrap_or_default()
         .into_iter()
         .map(|quote| quote.0)
         .filter(|quote| quote.contains(current_input))
         .collect();
-    
-    let list = List::new(items.clone().into_iter().map(|string| {
-        ListItem::new(Span::from(string))
-    }).collect::<Vec<ListItem>>())
-        .block(default_block().title("Search results:"))
-        .highlight_style(default_style());
-    
+
+    let list = List::new(
+        items
+            .clone()
+            .into_iter()
+            .map(|string| ListItem::new(Span::from(string)))
+            .collect::<Vec<ListItem>>(),
+    )
+    .block(default_block().title("Search results:"))
+    .highlight_style(default_style());
+
     let para = Paragraph::new(vec![
         Spans::from(vec![Span::raw("")]),
-        Spans::from(vec![Span::raw(
-            "Enter in your search terms:",
-        )]),
+        Spans::from(vec![Span::raw("Enter in your search terms:")]),
         Spans::from(vec![Span::raw("")]),
         Spans::from(vec![Span::raw(current_input)]),
         Spans::from(vec![Span::raw("")]),
     ])
-        .alignment(Alignment::Center)
-        .block(default_block().title("Search Entry"));
-    
+    .alignment(Alignment::Center)
+    .block(default_block().title("Search Entry"));
+
     (para, list, items)
 }
-
