@@ -126,7 +126,7 @@ pub fn render_finder(current_input: &str) -> (Paragraph, List, Vec<String>) {
         .unwrap_or_default()
         .into_iter()
         .map(|quote| quote.0)
-        .filter(|quote| quote.contains(current_input))
+        .filter(|quote| quote.to_lowercase().contains(&current_input.to_lowercase()))
         .collect();
 
     let list = List::new(

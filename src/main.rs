@@ -189,7 +189,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let qs: Vec<_> = db
                         .into_iter()
                         .filter(|quote| quote.1.contains(&q))
-                        .map(|quote| ListItem::new(quote.0))
+                        .map(|quote| ListItem::new(format!("{:?}    |    {}", quote.1, quote.0)))
                         .collect();
 
                     let widget = List::new(qs)
