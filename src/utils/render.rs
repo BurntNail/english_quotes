@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use tui::{
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, BorderType, Borders, Paragraph},
+    widgets::{Block, BorderType, Borders, Paragraph, Wrap},
 };
 
 pub fn coloured_span<'a>(st: impl Into<Cow<'a, str>>, fg: Color) -> Span<'a> {
@@ -27,6 +27,7 @@ pub fn para_from_strings<'a>(texts: Vec<Either<Cow<'a, str>, Span<'a>>>) -> Para
         para_body.push(Spans::from(span));
     }
     Paragraph::new(para_body)
+    .wrap(Wrap {trim: true})
 }
 
 pub fn default_style() -> Style {

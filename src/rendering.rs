@@ -11,7 +11,7 @@ use tui::{
     layout::{Alignment, Constraint},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{List, ListItem, ListState, Paragraph, Row, Table},
+    widgets::{List, ListItem, ListState, Paragraph, Row, Table, Wrap},
 };
 
 pub fn render_home<'a>() -> Paragraph<'a> {
@@ -116,7 +116,8 @@ pub fn render_entry(current_input: &str) -> (MultipleList, Paragraph) {
         Spans::from(vec![Span::raw("")]),
     ])
     .alignment(Alignment::Center)
-    .block(default_block().title("Quote Entry"));
+    .block(default_block().title("Quote Entry"))
+    .wrap(Wrap {trim: true});
 
     (list, para)
 }
@@ -147,7 +148,8 @@ pub fn render_finder(current_input: &str) -> (Paragraph, List, Vec<String>) {
         Spans::from(vec![Span::raw("")]),
     ])
     .alignment(Alignment::Center)
-    .block(default_block().title("Search Entry"));
+    .block(default_block().title("Search Entry"))
+    .wrap(Wrap {trim: true});
 
     (para, list, items)
 }
