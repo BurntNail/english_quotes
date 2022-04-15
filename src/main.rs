@@ -250,7 +250,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     if selected > 0 {
                                         entry_category_state.highlight(Some(selected - 1));
                                     } else {
-                                        entry_category_state.highlight(Some(ALL_PERMS.len()));
+                                        entry_category_state.highlight(Some(ALL_PERMS.len() - 1));
                                     }
                                 } else {
                                     entry_category_state.highlight(Some(0));
