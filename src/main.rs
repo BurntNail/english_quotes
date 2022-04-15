@@ -384,7 +384,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             KeyCode::Enter => {
                                 let quote = get_quote_by_content(
                                     &find_quote_list
-                                        [find_quote_state.selected().unwrap_or_default()],
+                                        [find_quote_state.selected().unwrap_or_default()].0,
                                 );
                                 match quote {
                                     Some(quote) => {
@@ -407,7 +407,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             KeyCode::Delete => {
                                 if let Some(quote) = get_quote_by_content(
                                     &find_quote_list
-                                        [find_quote_state.selected().unwrap_or_default()],
+                                        [find_quote_state.selected().unwrap_or_default()].0,
                                 ) {
                                     remove_quote_by_quote(
                                         &mut quote_single_category_state,

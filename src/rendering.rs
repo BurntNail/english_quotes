@@ -6,6 +6,7 @@ use crate::{
         either::Either,
         render::{coloured_span, default_block, default_style, para_from_strings},
     },
+    Quote
 };
 use tui::{
     layout::{Alignment, Constraint},
@@ -122,14 +123,13 @@ pub fn render_entry(current_input: &str) -> (MultipleList, Paragraph) {
     (list, para)
 }
 
-pub fn render_finder(current_input: &str) -> (Paragraph, List, Vec<String>) {
+pub fn render_finder(current_input: &str) -> (Paragraph, List, Vec<Quote>) {
     let db = read_db()
         .unwrap_or_default();
     let db_len = db.len();
-    let items: Vec<String> = db
+    let items: Vec<Quote> = db
         .into_iter()
-        .map(|quote| quote.0)
-        .filter(|quote| quote.to_lowercase().contains(&current_input.to_lowercase()))
+        .filter(|quote| quote.0.to_lowercase().contains(&current_input.to_lowercase()))
         .collect();
     let items_len = items.len();
 
@@ -137,7 +137,7 @@ pub fn render_finder(current_input: &str) -> (Paragraph, List, Vec<String>) {
         items
             .clone()
             .into_iter()
-            .map(|string| ListItem::new(Span::from(string)))
+            .map(|quote| ListItem::new(Span::from(format!("{} - {:?}", quote.0, quote.1))))
             .collect::<Vec<ListItem>>(),
     )
     .block(default_block().title(format!("Search Results ({}/{}):", items_len, db_len)))
