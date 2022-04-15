@@ -123,12 +123,15 @@ pub fn render_entry(current_input: &str) -> (MultipleList, Paragraph) {
 }
 
 pub fn render_finder(current_input: &str) -> (Paragraph, List, Vec<String>) {
-    let items: Vec<String> = read_db()
-        .unwrap_or_default()
+    let db = read_db()
+        .unwrap_or_default();
+    let db_len = db.len();
+    let items: Vec<String> = db
         .into_iter()
         .map(|quote| quote.0)
         .filter(|quote| quote.to_lowercase().contains(&current_input.to_lowercase()))
         .collect();
+    let items_len = items.len();
 
     let list = List::new(
         items
@@ -137,7 +140,7 @@ pub fn render_finder(current_input: &str) -> (Paragraph, List, Vec<String>) {
             .map(|string| ListItem::new(Span::from(string)))
             .collect::<Vec<ListItem>>(),
     )
-    .block(default_block().title("Search results:"))
+    .block(default_block().title(format!("Search Results ({}/{}):", items_len, db_len)))
     .highlight_style(default_style());
 
     let para = Paragraph::new(vec![
@@ -148,7 +151,7 @@ pub fn render_finder(current_input: &str) -> (Paragraph, List, Vec<String>) {
         Spans::from(vec![Span::raw("")]),
     ])
     .alignment(Alignment::Center)
-    .block(default_block().title("Search Entry"))
+    .block(default_block().title("Search Entry: "))
     .wrap(Wrap {trim: true});
 
     (para, list, items)
