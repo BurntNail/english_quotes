@@ -238,6 +238,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 if let Some(selected) = entry_category_state.highlighted() {
                                     if selected < ALL_PERMS.len() - 1 {
                                         entry_category_state.highlight(Some(selected + 1));
+                                    } else {
+                                        entry_category_state.highlight(Some(0));
                                     }
                                 } else {
                                     entry_category_state.highlight(Some(ALL_PERMS.len() - 1));
@@ -247,6 +249,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 if let Some(selected) = entry_category_state.highlighted() {
                                     if selected > 0 {
                                         entry_category_state.highlight(Some(selected - 1));
+                                    } else {
+                                        entry_category_state.highlight(Some(ALL_PERMS.len()));
                                     }
                                 } else {
                                     entry_category_state.highlight(Some(0));
