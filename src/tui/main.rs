@@ -216,8 +216,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .map(|index| ALL_PERMS[index].clone())
                                     .collect();
 
-                                add_quote_to_db(Quote(current_input.trim().to_string(), indices))
-                                    .expect("cannot add quote");
+                                add_quote_to_db(
+                                    Quote(current_input.trim().to_string(), indices),
+                                    None,
+                                )
+                                .expect("cannot add quote");
                                 current_input.clear();
                             }
                             KeyCode::Backspace => {
@@ -385,6 +388,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     &find_quote_list
                                         [find_quote_state.selected().unwrap_or_default()]
                                     .0,
+                                    None,
                                 );
                                 match quote {
                                     Ok(quote) => {
@@ -409,6 +413,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     &find_quote_list
                                         [find_quote_state.selected().unwrap_or_default()]
                                     .0,
+                                    None,
                                 ) {
                                     remove_quote_by_quote(&mut quote_single_category_state, &quote)
                                         .expect("cannot remove quote");
@@ -422,7 +427,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    sort_list().unwrap();
+    sort_list(None).unwrap();
 
     Ok(())
 }

@@ -12,12 +12,13 @@ pub fn get_quote(
     raw_get_quote(
         category_state.selected().expect("quote type selected"),
         item_state.selected().unwrap_or_default(),
+        None,
     )
 }
 
 pub fn remove_quote_by_quote(list_state: &mut ListState, q: &Quote) -> Result<(), Error> {
     if let Some(selected) = list_state.selected() {
-        remove_quote(q)?;
+        remove_quote(q, None)?;
         if selected != 0 {
             list_state.select(Some(selected - 1));
         }
