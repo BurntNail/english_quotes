@@ -361,7 +361,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             current_input.clear();
                             active_menu_item = MenuItem::Find;
                         }
-                        KeyCode::Char('r') => export(),
+                        KeyCode::Char('r') => {
+                            let _hello = export();
+                        }
                         _ => {}
                     },
                     Event::Tick => {}

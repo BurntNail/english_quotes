@@ -14,6 +14,7 @@ use egui::panel::Side;
 use english_quotes::{
     db::{add_quote_to_db, read_db, remove_quote, sort_list},
     quote::{FileType, Quote, ALL_PERMS},
+    utils::exports::export,
 };
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
@@ -78,6 +79,9 @@ impl eframe::App for EnglishQuotesApp {
                     current_search_term: String::new(),
                 };
             }
+            if ui.button("Export").clicked() {
+                export().unwrap_or_else(|err| warn!("Unable to export: {err}"));
+            }
         });
 
         {
@@ -85,7 +89,7 @@ impl eframe::App for EnglishQuotesApp {
             if let Some(quote) = &self.quote_settings {
                 egui::Window::new("Quote Settings")
                     .collapsible(false)
-                    .resizable(false)
+                    .resizable(true)
                     .show(ctx, |ui| {
                         ui.heading(&quote.0);
                         if ui.button("Delete Quote").clicked() {
@@ -117,13 +121,14 @@ impl eframe::App for EnglishQuotesApp {
             }
         }
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            egui::ScrollArea::vertical().show(ui, |ui| match &mut self.current_state {
-                CurrentAppState::QuoteCategories => {
-                    ui.heading("All Quotes");
+        egui::CentralPanel::default().show(ctx, |ui| match &mut self.current_state {
+            CurrentAppState::QuoteCategories => {
+                ui.heading("All Quotes");
 
-                    ui.horizontal(|ui| {
-                        vertical_category_checkbox(ui, &mut self.current_checked);
+                ui.horizontal(|ui| {
+                    vertical_category_checkbox(ui, &mut self.current_checked);
+
+                    egui::ScrollArea::vertical().show(ui, |ui| {
                         ui.vertical(|ui| {
                             let chosen_types: Vec<String> =
                                 get_chosen_types(self.current_checked.clone());
@@ -147,44 +152,47 @@ impl eframe::App for EnglishQuotesApp {
                                     self.quote_settings = Some(quote);
                                 }
                             }
-                        });
+                        })
                     });
-                }
-                CurrentAppState::QuoteEntry { current_text } => {
-                    ui.heading("Quote Entry");
+                });
+            }
+            CurrentAppState::QuoteEntry { current_text } => {
+                ui.heading("Quote Entry");
 
-                    ui.horizontal(|ui| {
-                        vertical_category_checkbox(ui, &mut self.current_checked);
-                        ui.vertical(|ui| {
-                            ui.text_edit_singleline(current_text);
+                ui.horizontal(|ui| {
+                    vertical_category_checkbox(ui, &mut self.current_checked);
+                    ui.vertical(|ui| {
+                        ui.text_edit_singleline(current_text);
 
-                            if ui.button("Submit!").clicked() {
-                                let new_text = current_text.clone().trim().to_string();
-                                let chosen_ts = get_chosen_types(self.current_checked.clone());
-                                let new_quote = Quote(new_text, chosen_ts);
+                        if ui.button("Submit!").clicked() {
+                            let new_text = current_text.clone().trim().to_string();
+                            let chosen_ts = get_chosen_types(self.current_checked.clone());
+                            let new_quote = Quote(new_text, chosen_ts);
 
-                                add_quote_to_db(new_quote, Some(&mut self.current_db))
-                                    .unwrap_or_else(|err| {
-                                        warn!("Unable to add quote: {err}");
-                                        vec![]
-                                    });
+                            add_quote_to_db(new_quote, Some(&mut self.current_db)).unwrap_or_else(
+                                |err| {
+                                    warn!("Unable to add quote: {err}");
+                                    vec![]
+                                },
+                            );
 
-                                current_text.clear();
-                                sort_list(Some(&mut self.current_db))
-                                    .unwrap_or_else(|err| warn!("Unable to remove quote: {err}"));
-                            }
-                        });
+                            current_text.clear();
+                            sort_list(Some(&mut self.current_db))
+                                .unwrap_or_else(|err| warn!("Unable to remove quote: {err}"));
+                        }
                     });
-                }
-                CurrentAppState::Search {
-                    current_search_term,
-                } => {
-                    ui.heading("Search Mode");
-                    ui.horizontal(|ui| {
-                        ui.label("Search Input: ");
-                        ui.text_edit_singleline(current_search_term);
-                    });
+                });
+            }
+            CurrentAppState::Search {
+                current_search_term,
+            } => {
+                ui.heading("Search Mode");
+                ui.horizontal(|ui| {
+                    ui.label("Search Input: ");
+                    ui.text_edit_singleline(current_search_term);
+                });
 
+                egui::ScrollArea::vertical().show(ui, |ui| {
                     for quote in self
                         .current_db
                         .clone()
@@ -196,8 +204,8 @@ impl eframe::App for EnglishQuotesApp {
                             self.quote_settings = Some(quote);
                         }
                     }
-                }
-            })
+                });
+            }
         });
     }
 
