@@ -1,33 +1,30 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::all)]
 #![warn(clippy::nursery)]
-
 #![allow(clippy::module_name_repetitions, clippy::expect_fun_call)]
 
 mod db;
+mod events;
 mod multiple_state;
-mod quote;
 mod rendering;
-mod utils;
 
 use crate::{
-    db::{
-        add_quote_to_db, get_quote, get_quote_by_content, read_db, remove_quote_by_quote, sort_list,
-    },
+    db::{get_quote, remove_quote_by_quote},
+    events::{default_state, down_arrow, up_arrow, Event},
     multiple_state::MultipleListState,
-    quote::{Quote, ALL_PERMS},
-    rendering::{render_entry, render_finder, render_home, render_quotes},
-    utils::{
-        events::{default_state, down_arrow, up_arrow, Event},
-        exports::export,
-        render::{default_block, default_style},
-        MenuItem,
+    rendering::{
+        default_block, default_style, render_entry, render_finder, render_home, render_quotes,
     },
 };
 use crossterm::{
     event,
     event::{Event as CEvent, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode},
+};
+use english_quotes::{
+    db::{add_quote_to_db, get_quote_by_content, read_db, sort_list},
+    quote::{Quote, ALL_PERMS},
+    utils::{exports::export, MenuItem},
 };
 use std::{
     sync::mpsc,
@@ -219,8 +216,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .map(|index| ALL_PERMS[index].clone())
                                     .collect();
 
-                                add_quote_to_db(Quote(current_input.trim().to_string(), indices))
-                                    .expect("cannot add quote");
+                                add_quote_to_db(
+                                    Quote(current_input.trim().to_string(), indices),
+                                    None,
+                                )
+                                .expect("cannot add quote");
                                 current_input.clear();
                             }
                             KeyCode::Backspace => {
@@ -288,7 +288,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 let quote_selected = get_quote(
                                     &mut main_category_state,
                                     &mut quote_single_category_state,
-                                );
+                                )
+                                .unwrap();
 
                                 entry_category_state.clear();
                                 entry_category_state.select_multiple(&quote_selected.1);
@@ -305,7 +306,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 let quote = get_quote(
                                     &mut main_category_state,
                                     &mut quote_single_category_state,
-                                );
+                                )
+                                .unwrap();
                                 remove_quote_by_quote(&mut quote_single_category_state, &quote)
                                     .expect("cannot remove quote");
                             }
@@ -384,10 +386,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             KeyCode::Enter => {
                                 let quote = get_quote_by_content(
                                     &find_quote_list
-                                        [find_quote_state.selected().unwrap_or_default()].0,
+                                        [find_quote_state.selected().unwrap_or_default()]
+                                    .0,
+                                    None,
                                 );
                                 match quote {
-                                    Some(quote) => {
+                                    Ok(quote) => {
                                         entry_category_state.clear();
                                         entry_category_state.select_multiple(&quote.1);
                                         remove_quote_by_quote(
@@ -399,21 +403,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         current_input = quote.0;
                                         active_menu_item = MenuItem::Entry;
                                     }
-                                    None => active_menu_item = MenuItem::Quotes,
+                                    Err(_) => active_menu_item = MenuItem::Quotes,
                                 }
 
                                 find_quote_list.clear();
-                            },
+                            }
                             KeyCode::Delete => {
-                                if let Some(quote) = get_quote_by_content(
+                                if let Ok(quote) = get_quote_by_content(
                                     &find_quote_list
-                                        [find_quote_state.selected().unwrap_or_default()].0,
+                                        [find_quote_state.selected().unwrap_or_default()]
+                                    .0,
+                                    None,
                                 ) {
-                                    remove_quote_by_quote(
-                                        &mut quote_single_category_state,
-                                        &quote,
-                                    )
-                                    .expect("cannot remove quote");
+                                    remove_quote_by_quote(&mut quote_single_category_state, &quote)
+                                        .expect("cannot remove quote");
                                 }
                             }
                             _ => {}
@@ -424,7 +427,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    sort_list().unwrap();
+    sort_list(None).unwrap();
 
     Ok(())
 }

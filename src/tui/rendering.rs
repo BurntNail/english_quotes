@@ -1,18 +1,15 @@
-use crate::{
+use crate::multiple_state::{MultipleList, MultipleListItem};
+use english_quotes::{
     db::read_db,
-    multiple_state::{MultipleList, MultipleListItem},
-    quote::ALL_PERMS,
-    utils::{
-        either::Either,
-        render::{coloured_span, default_block, default_style, para_from_strings},
-    },
-    Quote
+    quote::{Quote, ALL_PERMS},
+    utils::either::Either,
 };
+use std::borrow::Cow;
 use tui::{
     layout::{Alignment, Constraint},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{List, ListItem, ListState, Paragraph, Row, Table, Wrap},
+    widgets::{Block, BorderType, Borders, List, ListItem, ListState, Paragraph, Row, Table, Wrap},
 };
 
 pub fn render_home<'a>() -> Paragraph<'a> {
@@ -118,18 +115,22 @@ pub fn render_entry(current_input: &str) -> (MultipleList, Paragraph) {
     ])
     .alignment(Alignment::Center)
     .block(default_block().title("Quote Entry"))
-    .wrap(Wrap {trim: true});
+    .wrap(Wrap { trim: true });
 
     (list, para)
 }
 
 pub fn render_finder(current_input: &str) -> (Paragraph, List, Vec<Quote>) {
-    let db = read_db()
-        .unwrap_or_default();
+    let db = read_db().unwrap_or_default();
     let db_len = db.len();
     let items: Vec<Quote> = db
         .into_iter()
-        .filter(|quote| quote.0.to_lowercase().contains(&current_input.to_lowercase()))
+        .filter(|quote| {
+            quote
+                .0
+                .to_lowercase()
+                .contains(&current_input.to_lowercase())
+        })
         .collect();
     let items_len = items.len();
 
@@ -152,7 +153,37 @@ pub fn render_finder(current_input: &str) -> (Paragraph, List, Vec<Quote>) {
     ])
     .alignment(Alignment::Center)
     .block(default_block().title("Search Entry: "))
-    .wrap(Wrap {trim: true});
+    .wrap(Wrap { trim: true });
 
     (para, list, items)
+}
+
+pub fn coloured_span<'a>(st: impl Into<Cow<'a, str>>, fg: Color) -> Span<'a> {
+    Span::styled(st, Style::default().fg(fg))
+}
+
+pub fn default_block<'a>() -> Block<'a> {
+    Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default().fg(Color::White))
+        .border_type(BorderType::Plain)
+}
+
+pub fn para_from_strings<'a>(texts: Vec<Either<Cow<'a, str>, Span<'a>>>) -> Paragraph<'a> {
+    let mut para_body = vec![];
+    for txt in texts {
+        let span = match txt {
+            Either::Left(st) => Span::raw(st),
+            Either::Right(sp) => sp,
+        };
+        para_body.push(Spans::from(span));
+    }
+    Paragraph::new(para_body).wrap(Wrap { trim: true })
+}
+
+pub fn default_style() -> Style {
+    Style::default()
+        .add_modifier(Modifier::BOLD)
+        .bg(Color::Yellow)
+        .fg(Color::Black)
 }

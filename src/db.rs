@@ -3,37 +3,49 @@ use crate::{
     utils::Error,
 };
 use std::fs::read_to_string;
-use tui::widgets::ListState;
 
-pub fn add_quote_to_db(mut q: Quote) -> Result<Vec<Quote>, Error> {
-    let db_content = read_to_string(FileType::Database.get_location()).unwrap_or_default();
-    let mut parsed: Vec<Quote> = serde_json::from_str(&db_content).unwrap_or_default();
+pub fn add_quote_to_db(mut q: Quote, db: Option<&mut Vec<Quote>>) -> Result<Vec<Quote>, Error> {
+    if let Some(db) = db {
+        if q.1.is_empty() {
+            q.1.push("Other".into());
+        }
+        db.push(q);
 
-    if q.1.is_empty() {
-        q.1.push("Other".into());
-    }
+        Ok(vec![])
+    } else {
+        let db_content = read_to_string(FileType::Database.get_location()).unwrap_or_default();
+        let mut parsed: Vec<Quote> = serde_json::from_str(&db_content).unwrap_or_default();
 
-    parsed.push(q);
-    std::fs::write(
-        FileType::Database.get_location(),
-        &serde_json::to_vec(&parsed)?,
-    )?;
-    Ok(parsed)
-}
-
-pub fn remove_quote_by_quote(list_state: &mut ListState, q: &Quote) -> Result<(), Error> {
-    if let Some(selected) = list_state.selected() {
-        let db_contents = read_to_string(FileType::Database.get_location())?;
-        let mut parsed: Vec<Quote> = serde_json::from_str(&db_contents)?;
-        let pos = parsed.iter().position(|q_loco| q == q_loco).unwrap();
-        parsed.remove(pos);
+        parsed.push(q);
         std::fs::write(
             FileType::Database.get_location(),
             &serde_json::to_vec(&parsed)?,
         )?;
 
-        if selected != 0 {
-            list_state.select(Some(selected - 1));
+        Ok(parsed.clone())
+    }
+}
+
+pub fn remove_quote(q: &Quote, db: Option<&mut Vec<Quote>>) -> Result<(), Error> {
+    if let Some(db) = db {
+        if let Some(pos) = db.iter().position(|q_loco| q == q_loco) {
+            db.remove(pos);
+        } else {
+            return Err(Error::QuoteNotFoundInDB(q.clone()));
+        }
+    } else {
+        let db_content = read_to_string(FileType::Database.get_location()).unwrap_or_default();
+        let mut parsed: Vec<Quote> = serde_json::from_str(&db_content).unwrap_or_default();
+
+        if let Some(pos) = parsed.iter().position(|q_loco| q == q_loco) {
+            parsed.remove(pos);
+
+            std::fs::write(
+                FileType::Database.get_location(),
+                &serde_json::to_vec(&parsed)?,
+            )?;
+        } else {
+            return Err(Error::QuoteNotFoundInDB(q.clone()));
         }
     }
 
@@ -47,37 +59,54 @@ pub fn read_db() -> Result<Vec<Quote>, Error> {
     Ok(parsed)
 }
 
-pub fn get_quote(category_state: &mut ListState, item_state: &mut ListState) -> Quote {
-    let quote_type_index = category_state.selected().expect("quote type selected");
-    let db = read_db().expect("can read db");
+pub fn get_quote(
+    category_index: usize,
+    item_index: usize,
+    db: Option<Vec<Quote>>,
+) -> Result<Quote, Error> {
+    let db = db.unwrap_or_else(|| {
+        let db_content = read_to_string(FileType::Database.get_location()).unwrap_or_default();
+        serde_json::from_str(&db_content).unwrap_or_default()
+    });
+    let q = ALL_PERMS[category_index].to_string();
 
-    let q = ALL_PERMS[quote_type_index].to_string();
     db.into_iter()
         .filter(|quote| quote.1.contains(&q))
-        .nth(item_state.selected().unwrap_or_default())
-        .unwrap()
+        .nth(item_index)
+        .ok_or(Error::QuoteNotFoundIndex(category_index, item_index))
 }
 
-pub fn get_quote_by_content(content: &str) -> Option<Quote> {
-    read_db()
-        .unwrap_or_default()
+pub fn get_quote_by_content(content: &str, db: Option<Vec<Quote>>) -> Result<Quote, Error> {
+    db.unwrap_or_else(|| read_db().unwrap_or_default())
         .into_iter()
         .find(|quote| quote.0 == content)
+        .ok_or_else(|| Error::QuoteNotFoundStr(content.to_string()))
 }
 
-pub fn sort_list() -> Result<(), Error> {
-    let mut db: Vec<_> = read_db()?
-        .into_iter()
-        .map(|quote| {
-            let mut l = quote.1.clone();
-            l.sort();
+pub fn sort_list(db: Option<&mut Vec<Quote>>) -> Result<(), Error> {
+    let do_the_sort = |original: Vec<Quote>| {
+        let mut db: Vec<_> = original
+            .into_iter()
+            .map(|quote| {
+                let mut l = quote.1.clone();
+                l.sort();
 
-            Quote(quote.0, l)
-        })
-        .collect();
-    db.sort();
+                Quote(quote.0, l)
+            })
+            .collect();
+        db.sort();
+        db
+    };
 
-    std::fs::write(FileType::Database.get_location(), &serde_json::to_vec(&db)?)?;
+    if let Some(db) = db {
+        *db = do_the_sort(db.clone());
+    } else {
+        let new_db = do_the_sort(read_db()?);
+        std::fs::write(
+            FileType::Database.get_location(),
+            &serde_json::to_vec(&new_db)?,
+        )?;
+    }
 
     Ok(())
 }

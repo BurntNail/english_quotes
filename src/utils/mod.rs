@@ -1,8 +1,7 @@
 pub mod either;
-pub mod events;
 pub mod exports;
-pub mod render;
 
+use crate::quote::Quote;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -11,6 +10,12 @@ pub enum Error {
     ReadDBError(#[from] std::io::Error),
     #[error("error parsing the DB file: {0}")]
     ParseDBError(#[from] serde_json::Error),
+    #[error("Error finding quote in DB: {0}")]
+    QuoteNotFoundInDB(Quote),
+    #[error("Unable to find quote in category {0} index {1}")]
+    QuoteNotFoundIndex(usize, usize),
+    #[error("Unable to find a quote with content: {0}")]
+    QuoteNotFoundStr(String),
 }
 
 #[derive(Clone, Copy, Debug)]

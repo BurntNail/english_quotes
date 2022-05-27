@@ -5,6 +5,14 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "english_quotes_tui"
+path = "src/tui/main.rs"
+
+[[bin]]
+name = "english_quotes_egui"
+path = "src/egui/main.rs"
+
 [dependencies]
 color-eyre = "0.6.0"
 serde = {version = "1.0", features = ["derive"] }
@@ -14,5 +22,9 @@ tui = { version = "0.14", default-features = false, features = ['crossterm', 'se
 thiserror = "1.0"
 unicode-width = "0.1.9"
 lazy_static = "1.4.0"
+egui = "0.18.1"
+eframe = "0.18.0"
+tracing = "0.1.34"
+tracing-subscriber = "0.3.11"
 
 [features]

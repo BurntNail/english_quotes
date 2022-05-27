@@ -1,4 +1,4 @@
-use crate::quote::ALL_PERMS;
+use english_quotes::quote::ALL_PERMS;
 use tui::{
     buffer::Buffer,
     layout::{Corner, Rect},
