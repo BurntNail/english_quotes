@@ -1,12 +1,15 @@
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
+use std::{
+    cmp::Ordering,
+    fmt::{Debug, Display, Formatter},
+};
 
 lazy_static! {
     pub static ref ALL_PERMS: Vec<String> = {
         let location = FileType::Types.get_location();
         std::fs::read_to_string(&location)
-            .expect(&format!("Could not find t.t at {}", location))
+            .unwrap_or_else(|_| panic!("{}", format!("Could not find t.t at {}", location)))
             .split('\n')
             .filter(|ty| !ty.contains("//"))
             .map(|ty| {
@@ -29,6 +32,7 @@ pub enum FileType {
 }
 
 impl FileType {
+    #[must_use]
     pub const fn get_location(&self) -> &'static str {
         match self {
             Self::Database => "db.json",
@@ -52,6 +56,12 @@ impl PartialEq for Quote {
         l2.sort();
 
         (self.0 == other.0) && (l1 == l2)
+    }
+}
+
+impl Display for Quote {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        (self as &dyn std::fmt::Debug).fmt(f)
     }
 }
 
