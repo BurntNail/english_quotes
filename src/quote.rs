@@ -42,7 +42,7 @@ impl FileType {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct Quote(pub String, pub Vec<String>);
 
 impl Eq for Quote {}
