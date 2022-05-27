@@ -1,12 +1,6 @@
+use std::borrow::Cow;
 use crate::{
-    db::read_db,
     multiple_state::{MultipleList, MultipleListItem},
-    quote::ALL_PERMS,
-    utils::{
-        either::Either,
-        render::{coloured_span, default_block, default_style, para_from_strings},
-    },
-    Quote
 };
 use tui::{
     layout::{Alignment, Constraint},
@@ -14,6 +8,10 @@ use tui::{
     text::{Span, Spans},
     widgets::{List, ListItem, ListState, Paragraph, Row, Table, Wrap},
 };
+use tui::widgets::{Block, Borders, BorderType};
+use english_quotes::db::read_db;
+use english_quotes::quote::{ALL_PERMS, Quote};
+use english_quotes::utils::either::Either;
 
 pub fn render_home<'a>() -> Paragraph<'a> {
     let home = para_from_strings(vec![
@@ -155,4 +153,36 @@ pub fn render_finder(current_input: &str) -> (Paragraph, List, Vec<Quote>) {
     .wrap(Wrap {trim: true});
 
     (para, list, items)
+}
+
+
+pub fn coloured_span<'a>(st: impl Into<Cow<'a, str>>, fg: Color) -> Span<'a> {
+    Span::styled(st, Style::default().fg(fg))
+}
+
+pub fn default_block<'a>() -> Block<'a> {
+    Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default().fg(Color::White))
+        .border_type(BorderType::Plain)
+}
+
+pub fn para_from_strings<'a>(texts: Vec<Either<Cow<'a, str>, Span<'a>>>) -> Paragraph<'a> {
+    let mut para_body = vec![];
+    for txt in texts {
+        let span = match txt {
+            Either::Left(st) => Span::raw(st),
+            Either::Right(sp) => sp,
+        };
+        para_body.push(Spans::from(span));
+    }
+    Paragraph::new(para_body)
+        .wrap(Wrap {trim: true})
+}
+
+pub fn default_style() -> Style {
+    Style::default()
+        .add_modifier(Modifier::BOLD)
+        .bg(Color::Yellow)
+        .fg(Color::Black)
 }

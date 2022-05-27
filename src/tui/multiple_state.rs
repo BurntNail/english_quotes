@@ -1,4 +1,3 @@
-use crate::quote::ALL_PERMS;
 use tui::{
     buffer::Buffer,
     layout::{Corner, Rect},
@@ -7,6 +6,7 @@ use tui::{
     widgets::{Block, StatefulWidget, Widget},
 };
 use unicode_width::UnicodeWidthStr;
+use english_quotes::quote::ALL_PERMS;
 
 #[derive(Clone, Default)]
 pub struct MultipleListState {

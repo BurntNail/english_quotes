@@ -4,25 +4,14 @@
 
 #![allow(clippy::module_name_repetitions, clippy::expect_fun_call)]
 
-mod db;
 mod multiple_state;
-mod quote;
 mod rendering;
-mod utils;
+mod events;
 
 use crate::{
-    db::{
-        add_quote_to_db, get_quote, get_quote_by_content, read_db, remove_quote_by_quote, sort_list,
-    },
     multiple_state::MultipleListState,
-    quote::{Quote, ALL_PERMS},
     rendering::{render_entry, render_finder, render_home, render_quotes},
-    utils::{
-        events::{default_state, down_arrow, up_arrow, Event},
-        exports::export,
-        render::{default_block, default_style},
-        MenuItem,
-    },
+    events::default_state
 };
 use crossterm::{
     event,
@@ -41,6 +30,18 @@ use tui::{
     widgets::{Block, Borders, List, ListItem, Paragraph, Tabs},
     Terminal,
 };
+use english_quotes::{
+    utils::{
+        exports::export,
+        MenuItem,
+    },
+    db::{
+        add_quote_to_db, get_quote, get_quote_by_content, read_db, remove_quote_by_quote, sort_list,
+    },
+    quote::{Quote, ALL_PERMS},
+};
+use crate::events::{down_arrow, Event, up_arrow};
+use crate::rendering::{default_block, default_style};
 
 //based off https://blog.logrocket.com/rust-and-tui-building-a-command-line-interface-in-rust/
 ///But now much farther along than that project ever was

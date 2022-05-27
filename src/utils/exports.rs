@@ -1,5 +1,6 @@
-use crate::{db::read_db, quote::FileType, ALL_PERMS};
+use crate::{db::read_db, quote::FileType};
 use std::{fs::File, io::Write};
+use crate::quote::ALL_PERMS;
 
 pub fn export() {
     let list = read_db().expect("a database needs to exist");
