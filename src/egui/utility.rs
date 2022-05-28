@@ -1,5 +1,5 @@
 use egui::Ui;
-use english_quotes::quote::ALL_PERMS;
+use english_quotes::quote::{Quote, ALL_PERMS};
 
 pub fn vertical_category_checkbox(ui: &mut Ui, cc: &mut [bool]) {
     ui.vertical(|ui| {
@@ -23,4 +23,19 @@ pub fn reverse_chosen_types(cats: Vec<String>) -> Vec<bool> {
         .filter_map(|cat| ALL_PERMS.iter().position(|perm| &cat == perm))
         .for_each(|index| res[index] = true);
     res
+}
+
+pub fn display_quotes_list(
+    v: impl Iterator<Item = Quote>,
+    ui: &mut Ui,
+    mut on_click: Option<impl FnMut(Quote)>,
+) {
+    for quote in v {
+        let Quote(txt, cats) = quote.clone();
+        if ui.small_button(format!("{cats:?} | {txt}")).clicked() {
+            if let Some(on_click) = &mut on_click {
+                on_click(quote);
+            }
+        }
+    }
 }
