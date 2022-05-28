@@ -30,7 +30,7 @@ jobs:
         target: ${{matrix.job.target}}
         toolchain: stable
         override: true
-        profile: minimal#
+        profile: minimal
         
     - name: Cargo Cache
       uses: actions/cache@v1
