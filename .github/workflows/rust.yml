@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build-windows:
 
     runs-on: windows-latest
 
@@ -45,3 +45,75 @@ jobs:
       with:
         name: GUI
         path: target/release/english_quotes_egui.exe
+
+  build-linux:
+
+    runs-on: ubuntu-latest 
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Cargo Cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo
+    - name: Cargo Target Cache
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo-target
+    - name: Build
+      run: cargo build --release --all-targets
+    - name: Run tests
+      run: cargo test --release
+      
+    - uses: actions/upload-artifact@v3
+      with:
+        name: TUI
+        path: target/release/english_quotes_tui
+    - uses: actions/upload-artifact@v3
+      with:
+        name: GUI
+        path: target/release/english_quotes_egui
+
+  build-macos:
+
+    runs-on: macos-latest 
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Cargo Cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo
+    - name: Cargo Target Cache
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo-target
+    - name: Build
+      run: cargo build --release --all-targets
+    - name: Run tests
+      run: cargo test --release
+      
+    - uses: actions/upload-artifact@v3
+      with:
+        name: TUI
+        path: target/release/english_quotes_tui
+    - uses: actions/upload-artifact@v3
+      with:
+        name: GUI
+        path: target/release/english_quotes_egui
