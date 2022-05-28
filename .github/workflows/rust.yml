@@ -39,11 +39,11 @@ jobs:
       
     - uses: actions/upload-artifact@v3
       with:
-        name: TUI
+        name: TUI_Windows
         path: target/release/english_quotes_tui.exe
     - uses: actions/upload-artifact@v3
       with:
-        name: GUI
+        name: GUI_Windows
         path: target/release/english_quotes_egui.exe
 
   build-linux:
@@ -75,11 +75,11 @@ jobs:
       
     - uses: actions/upload-artifact@v3
       with:
-        name: TUI
+        name: TUI_Ubuntu
         path: target/release/english_quotes_tui
     - uses: actions/upload-artifact@v3
       with:
-        name: GUI
+        name: GUI_Ubuntu
         path: target/release/english_quotes_egui
 
   build-macos:
@@ -111,9 +111,9 @@ jobs:
       
     - uses: actions/upload-artifact@v3
       with:
-        name: TUI
+        name: TUI_Macos
         path: target/release/english_quotes_tui
     - uses: actions/upload-artifact@v3
       with:
-        name: GUI
+        name: GUI_Macos
         path: target/release/english_quotes_egui
