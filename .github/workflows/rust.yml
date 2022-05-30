@@ -30,7 +30,6 @@ jobs:
         target: ${{matrix.job.target}}
         toolchain: stable
         override: true
-        profile: minimal
         
     - name: Cargo Cache
       uses: actions/cache@v1
@@ -60,37 +59,19 @@ jobs:
       id: package
       shell: bash
       run: |
-        PKG_suffix=".tar.gz" ; case ${{ matrix.job.target }} in *-pc-windows-*) PKG_suffix=".zip" ;; esac;
-        PKG_BASENAME=${PROJECT_NAME}-v${PROJECT_VERSION}-${{ matrix.job.target }}
-        PKG_NAME=${PKG_BASENAME}${PKG_suffix}
-        echo ::set-output name=PKG_NAME::${PKG_NAME}
-
-        PKG_STAGING="${{ env.CICD_INTERMEDIATES_DIR }}/package"
-        ARCHIVE_DIR="${PKG_STAGING}/${PKG_BASENAME}/"
-        mkdir -p "${ARCHIVE_DIR}"
-        mkdir -p "${ARCHIVE_DIR}/autocomplete"
-
-        # Binary
-        cp "${{ steps.strip.outputs.BIN_PATH }}" "$ARCHIVE_DIR"
-
-        # base compressed package
-        pushd "${PKG_STAGING}/" >/dev/null
-        case ${{ matrix.job.target }} in
-          *-pc-windows-*) 7z -y a "${PKG_NAME}" "${PKG_BASENAME}"/* | tail -2 ;;
-          *) tar czf "${PKG_NAME}" "${PKG_BASENAME}"/* ;;
-        esac;
-        popd >/dev/null
-
-        # Let subsequent steps know where to find the compressed package
-        echo ::set-output name=PKG_PATH::"${PKG_STAGING}/${PKG_NAME}"
+        PKG_suffix=".zip"
         
-    - name: Upload TUI Artifacts
+        TUI_PATH="target/release/english_quotes_tui"; case ${{matrix.job.target}} in *-pc-windows-* TUI_PATH="target/release/english_quotes_tui.exe";; esac;
+        GUI_PATH="target/release/english_quotes_egui"; case ${{matrix.job.target}} in *-pc-windows-* TUI_PATH="target/release/english_quotes_egui.exe";; esac;
+        
+        mkdir -p "./binary_tmp"
+        mv $TUI_PATH "./binary_tmp"
+        mv $GUI_PATH "./binary_tmp"
+
+        7z -y a "./binary_tmp"/* | tail -2 ;;
+        
+    - name: Upload Artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: TUI_${{matrix.job.os}}
-        path: target/release/english_quotes_tui.exe target/release/english_quotes_tui
-    - name: Upload GUI Artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: GUI_${{matrix.job.os}}
-        path: target/release/english_quotes_egui.exe target/release/english_quotes_egui
+        name: BINARIES_${{matrix.job.os}}
+        path: binary_tmp.zip
