@@ -38,6 +38,7 @@ impl Default for EnglishQuotesApp {
 }
 
 impl eframe::App for EnglishQuotesApp {
+    #[allow(clippy::too_many_lines)]
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::SidePanel::new(Side::Left, "tab_menu").show(ctx, |ui| {
             ui.heading("Menus");
@@ -47,12 +48,13 @@ impl eframe::App for EnglishQuotesApp {
             }
             if ui.button("Quote Entry").clicked() {
                 self.current_state = CurrentAppState::QuoteEntry {
-                    ..Default::default()
+                    current_text: String::default()
                 };
             }
             if ui.button("Search Quotes").clicked() {
                 self.current_state = CurrentAppState::Search {
-                    ..Default::default()
+                    current_search_term: String::default(),
+                    is_inverted: false
                 };
             }
             if ui.button("Export").clicked() {
@@ -162,12 +164,16 @@ impl eframe::App for EnglishQuotesApp {
                 current_search_term,
                 is_inverted,
             } => {
-                ui.heading(format!("Search"));
+
+                let mut scroll = None;
+                ui.heading("Search");
 
                 ui.horizontal(|ui| {
-                    let label = ui.label("Search Input: ").rect;
-                    ui.text_edit_singleline(current_search_term);
-                    ui.checkbox("Invert").checked(&mut is_inverted);
+                    ui.label("Search Input: ");
+                    if ui.text_edit_singleline(current_search_term).changed() {
+                        scroll = Some(());
+                    }
+                    ui.checkbox(is_inverted, "Invert");
                 });
 
                 let (search_results, total_no, search_no) = {
@@ -178,7 +184,7 @@ impl eframe::App for EnglishQuotesApp {
                         .into_iter()
                         .filter(|qu| {
                             let r = qu.0.contains(current_search_term.as_str());
-                            if is_inverted {
+                            if *is_inverted {
                                 !r
                             } else {
                                 r
@@ -200,7 +206,7 @@ impl eframe::App for EnglishQuotesApp {
                         Some(|quote| self.quote_settings = Some(quote)),
                     );
 
-                    if let Some(_) = std::mem::take(&mut scroll) {
+                    if std::mem::take(&mut scroll).is_some() {
                         ui.scroll_to_rect(r, None);
                         //TODO: need to have a better solution than a separator
                     }
