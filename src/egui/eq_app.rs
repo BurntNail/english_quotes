@@ -13,7 +13,7 @@ use english_quotes::{
 pub enum CurrentAppState {
     QuoteCategories,
     QuoteEntry { current_text: String },
-    Search { current_search_term: String },
+    Search { current_search_term: String, is_inverted: bool },
 }
 
 pub struct EnglishQuotesApp {
@@ -47,12 +47,12 @@ impl eframe::App for EnglishQuotesApp {
             }
             if ui.button("Quote Entry").clicked() {
                 self.current_state = CurrentAppState::QuoteEntry {
-                    current_text: String::new(),
+                    ..Default::default()
                 };
             }
             if ui.button("Search Quotes").clicked() {
                 self.current_state = CurrentAppState::Search {
-                    current_search_term: String::new(),
+                    ..Default::default()
                 };
             }
             if ui.button("Export").clicked() {
@@ -160,15 +160,14 @@ impl eframe::App for EnglishQuotesApp {
             }
             CurrentAppState::Search {
                 current_search_term,
+                is_inverted,
             } => {
                 ui.heading(format!("Search"));
 
-                let mut scroll = None;
                 ui.horizontal(|ui| {
                     let label = ui.label("Search Input: ").rect;
-                    if ui.text_edit_singleline(current_search_term).changed() {
-                        scroll = Some(());
-                    }
+                    ui.text_edit_singleline(current_search_term);
+                    ui.checkbox("Invert").checked(&mut is_inverted);
                 });
 
                 let (search_results, total_no, search_no) = {
@@ -177,7 +176,14 @@ impl eframe::App for EnglishQuotesApp {
 
                     let search_results = full_list_clone
                         .into_iter()
-                        .filter(|qu| qu.0.contains(current_search_term.as_str()));
+                        .filter(|qu| {
+                            let r = qu.0.contains(current_search_term.as_str());
+                            if is_inverted {
+                                !r
+                            } else {
+                                r
+                            }
+                        });
                     let search_no = search_results.clone().count();
 
                     (search_results, total_no, search_no)
@@ -185,7 +191,7 @@ impl eframe::App for EnglishQuotesApp {
 
                 ui.separator();
 
-                egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::ScrollArea::vertical().max_height(f32::INFINITY).show(ui, |ui| {
                     let r = ui.separator().rect;
                     ui.heading(format!("Search Results: {search_no}/{total_no}"));
                     display_quotes_list(
