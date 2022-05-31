@@ -1,4 +1,4 @@
-name: Build Release Rust for all platforms
+name: Build Windows
 
 on:
   push:
@@ -10,68 +10,140 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-    name: ${{matrix.job.os}}
-    runs-on: ${{matrix.job.os}}
-    strategy:
-      fail-fast: false
-      matrix:
-        job:
-          - {target: aarch64-unknown-linux-gnu, os: ubuntu-latest, use-cross: true }
-          - {target: x86_64-apple-darwin, os: macos-latest}
-          - {target: x86_64-pc-windows-gnu, os: windows-latest}
+  build-windows:
+
+    runs-on: windows-latest
+
     steps:
-    - name: Checkout Source code
-      uses: actions/checkout@v2
-      
-    - name: Install latest Rust
+    - uses: actions/checkout@v2
+
+    - name: Install latest toolchain
       uses: actions-rs/toolchain@v1
-      with: 
-        target: ${{matrix.job.target}}
+      with:
+        target: x86_64-pc-windows-msvc
         toolchain: stable
         override: true
-        
+
     - name: Cargo Cache
       uses: actions/cache@v1
       with:
         path: ~/.cargo
-        key: ${{ matrix.job.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
         restore-keys: |
-          ${{ matrix.job.os }}-cargo-${{ hashFiles('Cargo.toml') }}
-          ${{ matrix.job.os }}-cargo
+          ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo
     - name: Cargo Target Cache
       uses: actions/cache@v1
       with:
         path: target
-        key: ${{ matrix.job.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+        key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
         restore-keys: |
-          ${{ matrix.job.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
-          ${{ matrix.job.os }}-cargo-target
-          
+          ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo-target
+
     - name: Build
       uses: actions-rs/cargo@v1
       with:
-        use-cross: ${{matrix.job.use-cross}}
         command: build
-        args: --locked --release --target=${{matrix.job.target}} --all-targets
-        
-    - name: Create compressed archive
-      id: package
-      shell: bash
-      run: |
-        PKG_suffix=".zip"
-        
-        TUI_PATH="target/release/english_quotes_tui"; case ${{matrix.job.target}} in *-pc-windows-* TUI_PATH="target/release/english_quotes_tui.exe";; esac;
-        GUI_PATH="target/release/english_quotes_egui"; case ${{matrix.job.target}} in *-pc-windows-* TUI_PATH="target/release/english_quotes_egui.exe";; esac;
-        
-        mkdir -p "./binary_tmp"
-        mv $TUI_PATH "./binary_tmp"
-        mv $GUI_PATH "./binary_tmp"
-
-        7z -y a "./binary_tmp"/* | tail -2 ;;
-        
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v3
+        args: --release --all-targets
+      
+    - uses: actions/upload-artifact@v3
       with:
-        name: BINARIES_${{matrix.job.os}}
-        path: binary_tmp.zip
+        name: TUI_Windows
+        path: target/release/english_quotes_tui.exe
+    - uses: actions/upload-artifact@v3
+      with:
+        name: GUI_Windows
+        path: target/release/english_quotes_egui.exe
+
+  build-linux:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install latest toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        target: x86_64-unknown-linux-gnu
+        toolchain: stable
+        override: true
+
+    - name: Cargo Cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo
+    - name: Cargo Target Cache
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo-target
+
+    - name: Build
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release --all-targets
+      
+    - uses: actions/upload-artifact@v3
+      with:
+        name: TUI_Linux
+        path: target/release/english_quotes_tui
+    - uses: actions/upload-artifact@v3
+      with:
+        name: GUI_Linux
+        path: target/release/english_quotes_egui
+
+  build-macos:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install latest toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        target: x86_64-apple-darwin
+        toolchain: stable
+        override: true
+
+    - name: Cargo Cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo
+    - name: Cargo Target Cache
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+          ${{ runner.os }}-cargo-target
+
+    - name: Build
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release --all-targets
+      
+    - uses: actions/upload-artifact@v3
+      with:
+        name: TUI_Macos
+        path: target/release/english_quotes_tui.app
+    - uses: actions/upload-artifact@v3
+      with:
+        name: GUI_Macos
+        path: target/release/english_quotes_egui.app
