@@ -1,3 +1,5 @@
+//TODO: stop cloning so much
+
 use crate::utility::{
     display_quotes_list, get_chosen_types, reverse_chosen_types, vertical_category_checkbox,
 };
@@ -12,8 +14,13 @@ use english_quotes::{
 #[derive(Clone, Debug, PartialEq)]
 pub enum CurrentAppState {
     QuoteCategories,
-    QuoteEntry { current_text: String },
-    Search { current_search_term: String, is_inverted: bool },
+    QuoteEntry {
+        current_text: String,
+    },
+    Search {
+        current_search_term: String,
+        is_inverted: bool,
+    },
 }
 
 pub struct EnglishQuotesApp {
@@ -48,13 +55,13 @@ impl eframe::App for EnglishQuotesApp {
             }
             if ui.button("Quote Entry").clicked() {
                 self.current_state = CurrentAppState::QuoteEntry {
-                    current_text: String::default()
+                    current_text: String::default(),
                 };
             }
             if ui.button("Search Quotes").clicked() {
                 self.current_state = CurrentAppState::Search {
                     current_search_term: String::default(),
-                    is_inverted: false
+                    is_inverted: false,
                 };
             }
             if ui.button("Export").clicked() {
@@ -141,10 +148,11 @@ impl eframe::App for EnglishQuotesApp {
                     ui.vertical(|ui| {
                         ui.text_edit_singleline(current_text);
 
+                        let chosen_ts = get_chosen_types(self.current_checked.clone());
+
                         if ui.button("Submit!").clicked() {
                             let new_text = current_text.clone().trim().to_string();
-                            let chosen_ts = get_chosen_types(self.current_checked.clone());
-                            let new_quote = Quote(new_text, chosen_ts);
+                            let new_quote = Quote(new_text, chosen_ts.clone());
 
                             add_quote_to_db(new_quote, Some(&mut self.current_db)).unwrap_or_else(
                                 |err| {
@@ -157,6 +165,29 @@ impl eframe::App for EnglishQuotesApp {
                             sort_list(Some(&mut self.current_db))
                                 .unwrap_or_else(|err| warn!("Unable to remove quote: {err}"));
                         }
+
+                        if !chosen_ts.is_empty() {
+                            ui.separator();
+                            ui.heading("Existing Quotes: ");
+
+                            //TODO: Make this into a function 
+                            let chosen_quotes =
+                                self.current_db.clone().into_iter().filter(|quote| {
+                                    let mut works = true;
+
+                                    for t in &chosen_ts {
+                                        if !quote.1.contains(t) {
+                                            works = false;
+                                            break;
+                                        }
+                                    }
+
+                                    works
+                                });
+                            for quote in chosen_quotes {
+                                ui.label(format!(" - {:?} | {}", quote.1, quote.0));
+                            }
+                        }
                     });
                 });
             }
@@ -164,7 +195,6 @@ impl eframe::App for EnglishQuotesApp {
                 current_search_term,
                 is_inverted,
             } => {
-
                 let mut scroll = None;
                 ui.heading("Search");
 
@@ -180,16 +210,14 @@ impl eframe::App for EnglishQuotesApp {
                     let full_list_clone = self.current_db.clone();
                     let total_no = full_list_clone.len();
 
-                    let search_results = full_list_clone
-                        .into_iter()
-                        .filter(|qu| {
-                            let r = qu.0.contains(current_search_term.as_str());
-                            if *is_inverted {
-                                !r
-                            } else {
-                                r
-                            }
-                        });
+                    let search_results = full_list_clone.into_iter().filter(|qu| {
+                        let r = qu.0.contains(current_search_term.as_str());
+                        if *is_inverted {
+                            !r
+                        } else {
+                            r
+                        }
+                    });
                     let search_no = search_results.clone().count();
 
                     (search_results, total_no, search_no)
@@ -197,20 +225,22 @@ impl eframe::App for EnglishQuotesApp {
 
                 ui.separator();
 
-                egui::ScrollArea::vertical().max_height(f32::INFINITY).show(ui, |ui| {
-                    let r = ui.separator().rect;
-                    ui.heading(format!("Search Results: {search_no}/{total_no}"));
-                    display_quotes_list(
-                        search_results,
-                        ui,
-                        Some(|quote| self.quote_settings = Some(quote)),
-                    );
+                egui::ScrollArea::vertical()
+                    .max_height(f32::INFINITY)
+                    .show(ui, |ui| {
+                        let r = ui.separator().rect;
+                        ui.heading(format!("Search Results: {search_no}/{total_no}"));
+                        display_quotes_list(
+                            search_results,
+                            ui,
+                            Some(|quote| self.quote_settings = Some(quote)),
+                        );
 
-                    if std::mem::take(&mut scroll).is_some() {
-                        ui.scroll_to_rect(r, None);
-                        //TODO: need to have a better solution than a separator
-                    }
-                });
+                        if std::mem::take(&mut scroll).is_some() {
+                            ui.scroll_to_rect(r, None);
+                            //TODO: need to have a better solution than a separator
+                        }
+                    });
             }
         });
     }
