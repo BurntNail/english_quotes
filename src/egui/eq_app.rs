@@ -173,20 +173,17 @@ impl eframe::App for EnglishQuotesApp {
                             let db_len = db.len();
 
                             //TODO: Make this into a function 
+                            let mut chosen_len = 0;
                             let chosen_quotes =
                                 db.into_iter().filter(|quote| {
-                                    let mut works = true;
-
                                     for t in &chosen_ts {
                                         if !quote.1.contains(t) {
-                                            works = false;
-                                            break;
+                                            break false;
                                         }
                                     }
-
-                                    works
+                                    chosen_len += 1;
+                                    true
                                 });
-                            let chosen_len = chosen_quotes.count();
 
                             ui.heading(format!("Existing Quotes ({db_len}/{chosen_len}): "));
 
