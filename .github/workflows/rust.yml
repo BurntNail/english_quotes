@@ -81,7 +81,7 @@ jobs:
     - name: Cargo Target Cache
       uses: actions/cache@v1
       with:
-        path: target
+        path: ./target
         key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
         restore-keys: |
           ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
