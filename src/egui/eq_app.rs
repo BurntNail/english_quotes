@@ -168,11 +168,13 @@ impl eframe::App for EnglishQuotesApp {
 
                         if !chosen_ts.is_empty() {
                             ui.separator();
-                            ui.heading("Existing Quotes: ");
+
+                            let db = self.current_db.clone();
+                            let db_len = db.len();
 
                             //TODO: Make this into a function 
                             let chosen_quotes =
-                                self.current_db.clone().into_iter().filter(|quote| {
+                                db.into_iter().filter(|quote| {
                                     let mut works = true;
 
                                     for t in &chosen_ts {
@@ -184,6 +186,10 @@ impl eframe::App for EnglishQuotesApp {
 
                                     works
                                 });
+                            let chosen_len = chosen_quotes.len();
+
+                            ui.heading(format!("Existing Quotes ({db_len}/{chosen_len}): "));
+
                             for quote in chosen_quotes {
                                 ui.label(format!(" - {:?} | {}", quote.1, quote.0));
                             }
