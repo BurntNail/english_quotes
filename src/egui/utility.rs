@@ -39,3 +39,14 @@ pub fn display_quotes_list(
         }
     }
 }
+
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum QuoteSelectionFilter {
+    And,
+    Or,
+}
+impl Default for QuoteSelectionFilter {
+    fn default() -> Self {
+        Self::Or
+    }
+}

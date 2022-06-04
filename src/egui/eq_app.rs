@@ -2,6 +2,7 @@
 
 use crate::utility::{
     display_quotes_list, get_chosen_types, reverse_chosen_types, vertical_category_checkbox,
+    QuoteSelectionFilter,
 };
 use eframe::glow::Context;
 use egui::panel::Side;
@@ -13,7 +14,9 @@ use english_quotes::{
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CurrentAppState {
-    QuoteCategories,
+    QuoteCategories {
+        current_quote_filter: QuoteSelectionFilter,
+    },
     QuoteEntry {
         current_text: String,
     },
@@ -33,7 +36,9 @@ pub struct EnglishQuotesApp {
 impl Default for EnglishQuotesApp {
     fn default() -> Self {
         Self {
-            current_state: CurrentAppState::QuoteCategories,
+            current_state: CurrentAppState::QuoteCategories {
+                current_quote_filter: QuoteSelectionFilter::default(),
+            },
             current_db: read_db().unwrap_or_else(|error| {
                 warn!("Unable to read database for EQ App: {error:?}");
                 vec![]
@@ -51,7 +56,9 @@ impl eframe::App for EnglishQuotesApp {
             ui.heading("Menus");
 
             if ui.button("All Quotes").clicked() {
-                self.current_state = CurrentAppState::QuoteCategories;
+                self.current_state = CurrentAppState::QuoteCategories {
+                    current_quote_filter: QuoteSelectionFilter::default(),
+                };
             }
             if ui.button("Quote Entry").clicked() {
                 self.current_state = CurrentAppState::QuoteEntry {
@@ -107,28 +114,59 @@ impl eframe::App for EnglishQuotesApp {
         }
 
         egui::CentralPanel::default().show(ctx, |ui| match &mut self.current_state {
-            CurrentAppState::QuoteCategories => {
+            CurrentAppState::QuoteCategories {
+                current_quote_filter,
+            } => {
                 ui.heading("All Quotes");
 
                 ui.horizontal(|ui| {
-                    vertical_category_checkbox(ui, &mut self.current_checked);
+                    egui::ScrollArea::vertical().show(ui, |ui| {
+                        vertical_category_checkbox(ui, &mut self.current_checked);
+                        ui.radio_value(
+                            current_quote_filter,
+                            QuoteSelectionFilter::Or,
+                            "One of selected",
+                        );
+                        ui.radio_value(
+                            current_quote_filter,
+                            QuoteSelectionFilter::And,
+                            "All of selected",
+                        );
+                    });
 
                     egui::ScrollArea::vertical().show(ui, |ui| {
                         ui.vertical(|ui| {
                             let chosen_types: Vec<String> =
                                 get_chosen_types(self.current_checked.clone());
+
                             let chosen_quotes =
                                 self.current_db.clone().into_iter().filter(|quote| {
-                                    let mut works = false;
+                                    match *current_quote_filter {
+                                        QuoteSelectionFilter::And => {
+                                            let mut works = true;
 
-                                    for t in &chosen_types {
-                                        if quote.1.contains(t) {
-                                            works = true;
-                                            break;
+                                            for t in &chosen_types {
+                                                if !quote.1.contains(t) {
+                                                    works = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            works
+                                        }
+                                        QuoteSelectionFilter::Or => {
+                                            let mut works = false;
+
+                                            for t in &chosen_types {
+                                                if quote.1.contains(t) {
+                                                    works = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            works
                                         }
                                     }
-
-                                    works
                                 });
 
                             display_quotes_list(
@@ -172,10 +210,11 @@ impl eframe::App for EnglishQuotesApp {
                             let db = self.current_db.clone();
                             let db_len = db.len();
 
-                            //TODO: Make this into a function 
+                            //TODO: Make this into a function
                             let mut chosen_len = 0;
-                            let chosen_quotes =
-                                db.into_iter().filter(|quote| {
+                            let chosen_quotes: Vec<_> = db
+                                .into_iter()
+                                .filter(|quote| {
                                     let mut works = true;
                                     for t in &chosen_ts {
                                         if !quote.1.contains(t) {
@@ -187,9 +226,10 @@ impl eframe::App for EnglishQuotesApp {
                                         chosen_len += 1;
                                     }
                                     works
-                                });
+                                })
+                                .collect();
 
-                            ui.heading(format!("Existing Quotes ({db_len}/{chosen_len}): "));
+                            ui.heading(format!("Existing Quotes ({chosen_len}/{db_len}): "));
 
                             for quote in chosen_quotes {
                                 ui.label(format!(" - {:?} | {}", quote.1, quote.0));
