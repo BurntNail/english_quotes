@@ -120,19 +120,17 @@ impl eframe::App for EnglishQuotesApp {
                 ui.heading("All Quotes");
 
                 ui.horizontal(|ui| {
-                    egui::ScrollArea::vertical().show(ui, |ui| {
-                        vertical_category_checkbox(ui, &mut self.current_checked);
-                        ui.radio_value(
-                            current_quote_filter,
-                            QuoteSelectionFilter::Or,
-                            "One of selected",
-                        );
-                        ui.radio_value(
-                            current_quote_filter,
-                            QuoteSelectionFilter::And,
-                            "All of selected",
-                        );
-                    });
+                    vertical_category_checkbox(ui, &mut self.current_checked);
+                    ui.radio_value(
+                        current_quote_filter,
+                        QuoteSelectionFilter::Or,
+                        "One of selected",
+                    );
+                    ui.radio_value(
+                        current_quote_filter,
+                        QuoteSelectionFilter::And,
+                        "All of selected",
+                    );
 
                     egui::ScrollArea::vertical().show(ui, |ui| {
                         ui.vertical(|ui| {
