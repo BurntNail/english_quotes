@@ -186,7 +186,7 @@ impl eframe::App for EnglishQuotesApp {
 
                                     works
                                 });
-                            let chosen_len = chosen_quotes.len();
+                            let chosen_len = chosen_quotes.chosen_quotes();
 
                             ui.heading(format!("Existing Quotes ({db_len}/{chosen_len}): "));
 
