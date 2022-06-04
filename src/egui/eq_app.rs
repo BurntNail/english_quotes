@@ -117,20 +117,26 @@ impl eframe::App for EnglishQuotesApp {
             CurrentAppState::QuoteCategories {
                 current_quote_filter,
             } => {
-                ui.heading("All Quotes");
 
                 ui.horizontal(|ui| {
-                    vertical_category_checkbox(ui, &mut self.current_checked);
-                    ui.radio_value(
-                        current_quote_filter,
-                        QuoteSelectionFilter::Or,
-                        "One of selected",
-                    );
-                    ui.radio_value(
-                        current_quote_filter,
-                        QuoteSelectionFilter::And,
-                        "All of selected",
-                    );
+                    ui.vertical(|ui| {
+                        ui.heading("All Quotes");
+                        ui.label("---");
+
+                        ui.radio_value(
+                            current_quote_filter,
+                            QuoteSelectionFilter::Or,
+                            "One of selected",
+                        );
+                        ui.radio_value(
+                            current_quote_filter,
+                            QuoteSelectionFilter::And,
+                            "All of selected",
+                        );
+
+                        ui.label("---"); //separator messes up the horizontal
+                        vertical_category_checkbox(ui, &mut self.current_checked);
+                    });
 
                     egui::ScrollArea::vertical().show(ui, |ui| {
                         ui.vertical(|ui| {
@@ -166,6 +172,8 @@ impl eframe::App for EnglishQuotesApp {
                                         }
                                     }
                                 });
+
+                            // info!("Quotes: {:?}", &chosen_quotes);
 
                             display_quotes_list(
                                 chosen_quotes,
